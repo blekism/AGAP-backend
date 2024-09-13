@@ -19,11 +19,11 @@ if ($requestMethod == 'PUT') {
     $inputData = json_decode(file_get_contents("php://input"), true);
 
     if (empty($inputData)) {
-        $updateDonorAcc = updateDonorAcc($_GET, $_POST);
+        $updateAccount = updateAccount($_GET, $_POST);
     } else {
-        $updateDonorAcc = updateDonorAcc($_GET, $inputData);
+        $updateAccount = updateAccount($_GET, $inputData);
     }
-    echo $updateDonorAcc;
+    echo $updateAccount;
     exit();
 } else {
     $data = [

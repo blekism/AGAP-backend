@@ -2,7 +2,7 @@
 
 header('Access-Control-Allow-Origin:*');
 header('Content-Type: application/json');
-header('Access-Control-Allow-Methods: DELETE, OPTIONS');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Request-With');
 
 include('../../function.php');
@@ -18,7 +18,7 @@ if ($requestMethod == "OPTIONS") {
     exit();
 }
 
-if ($requestMethod == 'DELETE') {
+if ($requestMethod == 'POST') {
     $session_token = $_COOKIE['session_token'] ?? '';
 
     $query = "SELECT account_id, session_expire FROM account_tbl WHERE session_token = '$session_token'";
@@ -29,31 +29,40 @@ if ($requestMethod == 'DELETE') {
         $account_id = $res['account_id'];
         $session_expire = $res['session_expire'];
 
-        if (time() > $session_expire) { //prompt user to login again if session has expired
+        if (time() > $session_expire) {
             $invalidate_query = "UPDATE account_tbl SET session_token = NULL, session_expire = NULL WHERE account_id = '$account_id'";
             mysqli_query($con, $invalidate_query);
 
-            $data = [
-                'status' => 401,
-                'message' => 'Unauthorized',
-            ];
-            header("HTTP/1.0 401 Unauthorized");
-            echo json_encode($data);
-            exit();
-        } else { //proceed with function call since session is still valid
             $inputData = json_decode(file_get_contents("php://input"), true);
 
-            $deleteDonation = deleteDonation($_GET);
-            echo $deleteDonation;
+            if (empty($inputData)) {
+                $loginVolunteerAcc = loginVolunteerAcc($_POST);
+            } else {
+                $loginVolunteerAcc = loginVolunteerAcc($inputData);
+            }
+            echo $loginVolunteerAcc;
+            exit();
+        } else {
+            $inputData = json_decode(file_get_contents("php://input"), true);
+
+            if (empty($inputData)) {
+                $loginVolunteerAcc = loginVolunteerAcc($_POST);
+            } else {
+                $loginVolunteerAcc = loginVolunteerAcc($inputData);
+            }
+            echo $loginVolunteerAcc;
             exit();
         }
-    } else { //prompt the user to login if session token is not found/null
-        $data = [
-            'status' => 401,
-            'message' => 'Unauthorized',
-        ];
-        header("HTTP/1.0 401 Unauthorized");
-        echo json_encode($data);
+    } else {
+        $inputData = json_decode(file_get_contents("php://input"), true);
+
+        if (empty($inputData)) {
+            $loginVolunteerAcc = loginVolunteerAcc($_POST);
+        } else {
+            $loginVolunteerAcc = loginVolunteerAcc($inputData);
+        }
+        echo $loginVolunteerAcc;
+        exit();
     }
 } else {
     $data = [

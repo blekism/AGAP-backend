@@ -1,0 +1,28 @@
+changes
+
+update insDelVolun //
+update insDelDonor //
+
+update signupvolunteer //
+update signupdonor //
+donation - donor id to account id //
+phase 2 and 3 volunteer_id to account id
+changes in query for sorting
+
+lalagyan ng cookies check
+generate cookies upon login for both acc //
+final session check for login both acc goods na //
+volunteer and donor signup di na need ng session check
+delete account and delete donation updated for session check //
+
+need pa gawan ng session checks:
+phase 1 lahat ng read 
+phase 1 lahat ng update
+iupdate yung function nila na irecieve na yung id directly from session check
+phase 2 lahat ng insert
+phase 2 lahat ng read 
+
+gawin yung email verification function main script and yung call with session checks na 
+
+last idagdag yung websocket communication
+ 

@@ -2,11 +2,12 @@
 
 header('Access-Control-Allow-Origin:*');
 header('Content-Type: application/json');
-header('Access-Control-Allow-Methods: DELETE, OPTIONS');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Request-With');
 
 include('../../function.php');
 require '../../../inc/dbcon.php';
+
 
 global $con;
 
@@ -18,7 +19,7 @@ if ($requestMethod == "OPTIONS") {
     exit();
 }
 
-if ($requestMethod == 'DELETE') {
+if ($requestMethod == 'POST') {
     $session_token = $_COOKIE['session_token'] ?? '';
 
     $query = "SELECT account_id, session_expire FROM account_tbl WHERE session_token = '$session_token'";
@@ -33,27 +34,36 @@ if ($requestMethod == 'DELETE') {
             $invalidate_query = "UPDATE account_tbl SET session_token = NULL, session_expire = NULL WHERE account_id = '$account_id'";
             mysqli_query($con, $invalidate_query);
 
-            $data = [
-                'status' => 401,
-                'message' => 'Unauthorized',
-            ];
-            header("HTTP/1.0 401 Unauthorized");
-            echo json_encode($data);
-            exit();
-        } else { //proceed with function call since session is still valid
             $inputData = json_decode(file_get_contents("php://input"), true);
 
-            $deleteDonation = deleteDonation($_GET);
-            echo $deleteDonation;
+            if (empty($inputData)) {
+                $loginDonorAcc = loginDonorAcc($_POST);
+            } else {
+                $loginDonorAcc = loginDonorAcc($inputData);
+            }
+            echo $loginDonorAcc;
+            exit();
+        } else { //proceed with login since session is still valid
+            $inputData = json_decode(file_get_contents("php://input"), true);
+
+            if (empty($inputData)) {
+                $loginDonorAcc = loginDonorAcc($_POST);
+            } else {
+                $loginDonorAcc = loginDonorAcc($inputData);
+            }
+            echo $loginDonorAcc;
             exit();
         }
-    } else { //prompt the user to login if session token is not found/null
-        $data = [
-            'status' => 401,
-            'message' => 'Unauthorized',
-        ];
-        header("HTTP/1.0 401 Unauthorized");
-        echo json_encode($data);
+    } else { //allows user to login after inital verification where session token is not found
+        $inputData = json_decode(file_get_contents("php://input"), true);
+
+        if (empty($inputData)) {
+            $loginDonorAcc = loginDonorAcc($_POST);
+        } else {
+            $loginDonorAcc = loginDonorAcc($inputData);
+        }
+        echo $loginDonorAcc;
+        exit();
     }
 } else {
     $data = [

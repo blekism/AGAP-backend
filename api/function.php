@@ -1,6 +1,11 @@
 <?php
 
 require __DIR__ . '/../inc/dbcon.php';
+require __DIR__ . '/../vendor/autoload.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
 
 function error422($message)
 {
@@ -15,26 +20,29 @@ function error422($message)
 
 
 //INSERT DONATION START
-function insertDonation($userInput, $userParams)
+function insertDonation($userInput, $account_id)
 {
     global $con;
 
     mysqli_begin_transaction($con);
-
-    $donor_id = mysqli_real_escape_string($con, $userParams['donor_id']);
     $donation_id = 'DONATE' . date('Y-d') . '-' . uniqid();
     $recipient_id = mysqli_real_escape_string($con, $userInput['recipient_id']);
-    $event_id = mysqli_real_escape_string($con, $userInput['event_id']);
     $itemLoop = $userInput['items'];
 
     if (empty(trim($recipient_id))) {
         return error422('Enter valid recipient');
-    } elseif (empty(trim($event_id))) {
-        return error422('Enter valid event');
     } elseif (empty($itemLoop)) {
         return error422('Enter valid items');
     } else {
-        $query = "INSERT INTO donation_tbl(donation_id, donor_id, recipient_id, event_id) VALUES('$donation_id', '$donor_id', '$recipient_id', '$event_id')";
+        $query = "INSERT INTO 
+            donation_tbl(
+                donation_id, 
+                account_id, 
+                recipient_id) 
+            VALUES(
+                '$donation_id', 
+                '$account_id', 
+                '$recipient_id')";
         $result = mysqli_query($con, $query);
 
 
@@ -120,76 +128,121 @@ function signVolunteer($userInput)
 {
     global $con;
 
-    $last_name = mysqli_real_escape_string($con, $userInput['last_name']);
-    $first_name = mysqli_real_escape_string($con, $userInput['first_name']);
-    $middle_name = mysqli_real_escape_string($con, $userInput['middle_name']);
-    $email = mysqli_real_escape_string($con, $userInput['email']);
-    $password = mysqli_real_escape_string($con, $userInput['password']);
-    $contact_info = mysqli_real_escape_string($con, $userInput['contact_info']);
-    $dept_category_id = mysqli_real_escape_string($con, $userInput['dept_category_id']);
-    $section = mysqli_real_escape_string($con, $userInput['section']);
-    $designation_id = mysqli_real_escape_string($con, $userInput['designation_id']);
+    if (isset($userInput['email']) && isset($userInput['password'])) {
+        $account_id = 'VOLUN - ' . date('Y-d') . substr(uniqid(), -5);
+        $first_name = mysqli_real_escape_string($con, $userInput['first_name']);
+        $last_name = mysqli_real_escape_string($con, $userInput['last_name']);
+        $middle_name = mysqli_real_escape_string($con, $userInput['middle_name']);
+        $email = mysqli_real_escape_string($con, $userInput['email']);
+        $password = mysqli_real_escape_string($con, $userInput['password']);
+        $contact_info = mysqli_real_escape_string($con, $userInput['contact_info']);
+        $dept_category_id = mysqli_real_escape_string($con, $userInput['dept_category_id']);
+        $designation_id = mysqli_real_escape_string($con, $userInput['designation_id']);
+        $section = mysqli_real_escape_string($con, $userInput['section']);
+        $mail = new PHPMailer(true);
 
-    $hashing = md5($password);
+        $hashing = md5($password);
 
-    if (empty(trim($last_name))) {
-        return error422('Enter valid last name');
-    } elseif (empty(trim($first_name))) {
-        return error422('Enter valid first name');
-    } elseif (empty(trim($middle_name))) {
-        return error422('Enter valid middle name');
-    } elseif (empty(trim($email))) {
-        return error422('Enter valid email');
-    } elseif (empty(trim($password))) {
-        return error422('Enter valid password');
-    } elseif (empty(trim($contact_info))) {
-        return error422('Enter valid contact information');
-    } elseif (empty(trim($dept_category_id))) {
-        return error422('Enter valid dept category');
-    } elseif (empty(trim($section))) {
-        return error422('Enter valid section');
-    } elseif (empty(trim($designation_id))) {
-        return error422('Enter valid designation');
-    } else {
-        $query = "INSERT INTO 
-            volunteer_signup(
+        if (empty(trim($last_name))) {
+            return error422('Enter valid last name');
+        } elseif (empty(trim($first_name))) {
+            return error422('Enter valid first name');
+        } elseif (empty(trim($middle_name))) {
+            return error422('Enter valid middle name');
+        } elseif (empty(trim($email))) {
+            return error422('Enter valid email');
+        } elseif (empty(trim($password))) {
+            return error422('Enter valid password');
+        } elseif (empty(trim($contact_info))) {
+            return error422('Enter valid contact information');
+        } elseif (empty(trim($dept_category_id))) {
+            return error422('Enter valid dept category');
+        } elseif (empty(trim($section))) {
+            return error422('Enter valid section');
+        } elseif (empty(trim($designation_id))) {
+            return error422('Enter valid designation');
+        } else {
+            try {
+                //Server settings
+                $mail->SMTPDebug = SMTP::DEBUG_SERVER;                      //Enable verbose debug output
+                $mail->isSMTP();                                            //Send using SMTP
+                $mail->Host       = 'smtp.gmail.com';                     //Set the SMTP server to send through
+                $mail->SMTPAuth   = true;                                   //Enable SMTP authentication
+                $mail->Username   = 'cristianlaviano@gmail.com';                     //SMTP username
+                $mail->Password   = 'cyog eepg pnqa nziy';                               //SMTP password
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;            //Enable implicit TLS encryption
+                $mail->Port       = 465;                                    //TCP port to connect to; use 587 if you have set `SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS`
+
+                //Recipients
+                $mail->setFrom('cristianlaviano@gmail.com', 'Mailer');
+                $mail->addAddress($email);
+                $verificationCode = substr(number_format(time() * rand(), 0, '', ''), 0, 6);     //Add a recipient
+
+
+                //Content
+                $mail->isHTML(true);                                  //Set email format to HTML
+                $mail->Subject = 'Verification code';
+                $mail->Body    = 'Your verification code is: ' . $verificationCode;
+                $mail->AltBody = 'Your verification code is: ' . $verificationCode;
+
+                $mail->send();
+                echo 'Message has been sent';
+
+                //ADD DITO YUNG READ NG ACCOUNT TABLE TO SEE IF MAY GANUN NANG EMAIL
+
+                $query = "INSERT INTO 
+            account_tbl(
+                account_id, 
                 last_name, 
                 first_name, 
                 middle_name, 
+                section,
+                dept_category_id,
+                designation_id, 
                 email, 
                 password, 
                 contact_info, 
-                dept_category_id, 
-                section, 
-                designation_id,) 
+                acc_status_id,
+                verification_code,
+                created_at) 
             VALUES(
-                '$last_name', 
+                '$account_id', 
+                '$last_name',
                 '$first_name', 
-                '$middle_name', 
+                '$middle_name',
+                '$section',
+                '$dept_category_id',
+                '$designation_id', 
                 '$email', 
                 '$hashing', 
                 '$contact_info', 
-                '$dept_category_id', 
-                '$section', 
-                '$designation_id')";
-        $result = mysqli_query($con, $query);
+                 1,
+                '$verificationCode',
+                NOW())";
+                $result = mysqli_query($con, $query);
 
-        if ($result) {
+                if ($result) {
 
-            $data = [
-                'status' => 201,
-                'message' => 'Volunteer Signup Success',
-            ];
-            header("HTTP/1.0 201 Inserted");
-            return json_encode($data);
-        } else {
-            $data = [
-                'status' => 500,
-                'message' => 'Internal Server Error',
-            ];
-            header("HTTP/1.0 500 Internal Server Error");
-            return json_encode($data);
+                    $data = [
+                        'status' => 201,
+                        'message' => 'Volunteer Signup Success',
+                    ];
+                    header("HTTP/1.0 201 Inserted");
+                    return json_encode($data);
+                } else {
+                    $data = [
+                        'status' => 422,
+                        'message' => 'Unprocessable entity',
+                    ];
+                    header("HTTP/1.0 422 Unprocessable Entity");
+                    return json_encode($data);
+                }
+            } catch (Exception $e) {
+                echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+            }
         }
+    } else {
+        return error422('Enter Email and Password');
     }
 }
 //INSERT VOLUNTEER END
@@ -199,251 +252,313 @@ function signDonor($userInput)
 {
     global $con;
 
-    $last_name = mysqli_real_escape_string($con, $userInput['last_name']);
-    $first_name = mysqli_real_escape_string($con, $userInput['first_name']);
-    $middle_name = mysqli_real_escape_string($con, $userInput['middle_name']);
-    $dept_category_id = mysqli_real_escape_string($con, $userInput['dept_category_id']);
-    $email = mysqli_real_escape_string($con, $userInput['email']);
-    $password = mysqli_real_escape_string($con, $userInput['password']);
-    $contact_info = mysqli_real_escape_string($con, $userInput['contact_info']);
+    if (isset($userInput['email']) && isset($userInput['password'])) {
+        $account_id = 'DONOR - ' . date('Y-d') . substr(uniqid(), -5);
+        $first_name = mysqli_real_escape_string($con, $userInput['first_name']);
+        $last_name = mysqli_real_escape_string($con, $userInput['last_name']);
+        $middle_name = mysqli_real_escape_string($con, $userInput['middle_name']);
+        $email = mysqli_real_escape_string($con, $userInput['email']);
+        $password = mysqli_real_escape_string($con, $userInput['password']);
+        $contact_info = mysqli_real_escape_string($con, $userInput['contact_info']);
+        $dept_category_id = mysqli_real_escape_string($con, $userInput['dept_category_id']);
+        $designation_id = mysqli_real_escape_string($con, $userInput['designation_id']);
+        $section = mysqli_real_escape_string($con, $userInput['section']);
+        $mail = new PHPMailer(true);
+
+        $hashing = md5($password);
+
+        if (empty(trim($last_name))) {
+            return error422('Enter valid last name');
+        } elseif (empty(trim($first_name))) {
+            return error422('Enter valid first name');
+        } elseif (empty(trim($middle_name))) {
+            return error422('Enter valid middle name');
+        } elseif (empty(trim($email))) {
+            return error422('Enter valid email');
+        } elseif (empty(trim($password))) {
+            return error422('Enter valid password');
+        } elseif (empty(trim($contact_info))) {
+            return error422('Enter valid contact information');
+        } elseif (empty(trim($dept_category_id))) {
+            return error422('Enter valid dept category');
+        } elseif (empty(trim($section))) {
+            return error422('Enter valid section');
+        } elseif (empty(trim($designation_id))) {
+            return error422('Enter valid designation');
+        } else {
+            try {
+                //Server settings
+                $mail->SMTPDebug = SMTP::DEBUG_SERVER;                      //Enable verbose debug output
+                $mail->isSMTP();                                            //Send using SMTP
+                $mail->Host       = 'smtp.gmail.com';                     //Set the SMTP server to send through
+                $mail->SMTPAuth   = true;                                   //Enable SMTP authentication
+                $mail->Username   = 'cristianlaviano@gmail.com';                     //SMTP username
+                $mail->Password   = 'cyog eepg pnqa nziy';                               //SMTP password
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;            //Enable implicit TLS encryption
+                $mail->Port       = 465;                                    //TCP port to connect to; use 587 if you have set `SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS`
+
+                //Recipients
+                $mail->setFrom('cristianlaviano@gmail.com', 'Mailer');
+                $mail->addAddress($email);
+                $verificationCode = substr(number_format(time() * rand(), 0, '', ''), 0, 6);     //Add a recipient
 
 
-    $hashing = md5($password);
+                //Content
+                $mail->isHTML(true);                                  //Set email format to HTML
+                $mail->Subject = 'Verification code';
+                $mail->Body    = 'Your verification code is: ' . $verificationCode;
+                $mail->AltBody = 'Your verification code is: ' . $verificationCode;
 
-    if (empty(trim($last_name))) {
-        return error422('Enter valid last name');
-    } elseif (empty(trim($first_name))) {
-        return error422('Enter valid first name');
-    } elseif (empty(trim($middle_name))) {
-        return error422('Enter valid middle name');
-    } elseif (empty(trim($email))) {
-        return error422('Enter valid email');
-    } elseif (empty(trim($password))) {
-        return error422('Enter valid password');
-    } elseif (empty(trim($contact_info))) {
-        return error422('Enter valid contact information');
-    } elseif (empty(trim($dept_category_id))) {
-        return error422('Enter valid dept category');
-    } else {
-        $query = "INSERT INTO 
-             donor_signup(
+                $mail->send();
+                echo 'Message has been sent';
+
+                //ADD DITO YUNG READ NG ACCOUNT TABLE TO SEE IF MAY GANUN NANG EMAIL
+
+                $query = "INSERT INTO 
+            account_tbl(
+                account_id, 
                 last_name, 
                 first_name, 
                 middle_name, 
-                dept_category_id
+                section,
+                dept_category_id,
+                designation_id, 
                 email, 
                 password, 
                 contact_info, 
-                ) 
+                acc_status_id,
+                verification_code,
+                created_at) 
             VALUES(
-                '$last_name', 
+                '$account_id', 
+                '$last_name',
                 '$first_name', 
                 '$middle_name',
-                '$dept_category_id'
+                '$section',
+                '$dept_category_id',
+                '$designation_id', 
                 '$email', 
                 '$hashing', 
-                '$contact_info')";
-        $result = mysqli_query($con, $query);
+                '$contact_info', 
+                 1,
+                '$verificationCode',
+                NOW())";
+                $result = mysqli_query($con, $query);
 
-        if ($result) {
+                if ($result) {
 
-            $data = [
-                'status' => 201,
-                'message' => 'Donor Signup Success',
-            ];
-            header("HTTP/1.0 201 Inserted");
-            return json_encode($data);
-        } else {
-            $data = [
-                'status' => 500,
-                'message' => 'Internal Server Error',
-            ];
-            header("HTTP/1.0 500 Internal Server Error");
-            return json_encode($data);
+                    $data = [
+                        'status' => 201,
+                        'message' => 'Donor Signup Success',
+                    ];
+                    header("HTTP/1.0 201 Inserted");
+                    return json_encode($data);
+                } else {
+                    $data = [
+                        'status' => 422,
+                        'message' => 'Unprocessable entity',
+                    ];
+                    header("HTTP/1.0 422 Unprocessable Entity");
+                    return json_encode($data);
+                }
+            } catch (Exception $e) {
+                echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+            }
         }
+    } else {
+        return error422('Enter Email and Password');
     }
 }
 //INSERT VOLUNTEER END
 
 //INSERT & DELETE VOLUNTEER SIGNUP TO ACCOUNT START
-function insDelVolunAcc($userParams)
+function loginVolunteerAcc($userInput)
 {
     global $con;
 
+    if (isset($userInput['email']) && isset($userInput['password'])) {
+        $email = mysqli_real_escape_string($con, $userInput['email']);
+        $password = mysqli_real_escape_string($con, $userInput['password']);
 
-    $singup_id = mysqli_real_escape_string($con, $userParams['signup_id']);
+        $hashing = md5($password);
 
-    if (empty(trim($singup_id))) {
-        return error422('No VolunteerID found in url');
-    } else {
-        $query1 = "SELECT * FROM volunteer_signup WHERE signup_id = '$singup_id' ";
-        $result1 = mysqli_query($con, $query1);
-        $volunteerData = mysqli_fetch_assoc($result1);
-
-        if (!$volunteerData) {
-            $data = [
-                'status' => 404,
-                'message' => 'Volunteer not found',
-            ];
-            header("HTTP/1.0 404 Not FOund");
-            return json_encode($data);
+        if (empty(trim($email))) {
+            return error422('Enter valid email');
+        } elseif (empty(trim($password))) {
+            return error422('Enter valid password');
         } else {
-            $volunteer_idtemp = mysqli_real_escape_string($con, $volunteerData['signup_id']);
-            $last_name = mysqli_real_escape_string($con, $volunteerData['last_name']);
-            $first_name = mysqli_real_escape_string($con, $volunteerData['first_name']);
-            $middle_name = mysqli_real_escape_string($con, $volunteerData['middle_name']);
-            $dept_category_id = mysqli_real_escape_string($con, $volunteerData['dept_category_id']);
-            $email = mysqli_real_escape_string($con, $volunteerData['email']);
-            $password = mysqli_real_escape_string($con, $volunteerData['password']);
-            $contact_info = mysqli_real_escape_string($con, $volunteerData['contact_info']);
-            $section = mysqli_real_escape_string($con, $volunteerData['section']);
-            $designation_id = mysqli_real_escape_string($con, $volunteerData['designation_id']);
+            $query = "SELECT account_id, verified_at, expire FROM 
+                    account_tbl 
+                WHERE 
+                    email = '$email' AND 
+                    password = '$hashing' AND 
+                    account_id LIKE 'VOLUN - %';";
+            $result = mysqli_query($con, $query);
 
-            $volunteer_id = 'VOLUN' . date('Y-d') . ' - ' . $volunteer_idtemp;
 
-            $query2 = "INSERT INTO 
-            volunteer_acc_tbl(
-                volunteer_id, 
-                last_name, 
-                first_name, 
-                middle_name, 
-                email, 
-                password, 
-                contact_info, 
-                dept_category_id, 
-                section, 
-                designnation_id) 
-            VALUES(
-                '$volunteer_id', 
-                '$last_name', 
-                '$first_name', 
-                '$middle_name', 
-                '$dept_category_id', 
-                '$email', 
-                '$password', 
-                '$contact_info', 
-                '$section', 
-                '$designation_id')";
-            $result2 = mysqli_query($con, $query2);
+            if ($result) {
+                if (mysqli_num_rows($result) == 1) {
+                    $res = mysqli_fetch_assoc($result);
+                    if ($res['verified_at'] != null) {
+                        $session_expire = $res['session_expire'];
 
-            if ($result2) {
-                $query3 = "DELETE FROM volunteer_signup WHERE signup_id = $singup_id";
-                $result3 = mysqli_query($con, $query3);
+                        if (time() > $session_expire) {
+                            $session_token = bin2hex(random_bytes(32));
 
-                if ($result3) {
-                    $data = [
-                        'status' => 201,
-                        'message' => 'User moved to accounts from signup successfully',
-                    ];
-                    header("HTTP/1.0 201 Moved");
-                    return json_encode($data);
+                            // Store session token in the database for the user
+                            $account_id = $res['account_id'];
+                            $update_token_query = "UPDATE account_tbl SET session_token='$session_token' WHERE account_id='$account_id'";
+                            mysqli_query($con, $update_token_query);
+
+                            // Set the session token as an HTTP-only, secure cookie
+                            setcookie('session_token', $session_token, [
+                                'expires' => time() + 3600, // 1-hour expiration
+                                'path' => '/',
+                                'httponly' => true,  // Prevent JavaScript access
+                                'secure' => true,    // Use HTTPS
+                                'samesite' => 'Strict', // CSRF protection
+                            ]);
+
+
+                            $data = [
+                                'status' => 201,
+                                'message' => 'Session Invalid, generated a new token: Logged In Successfully',
+                                'data' => $res,
+                            ];
+                            header("HTTP/1.0 200 OK");
+                            return json_encode($data);
+                        } else {
+                            $data = [
+                                'status' => 201,
+                                'message' => 'Session is still valid. Logged In Successfully',
+                                'data' => $res,
+                            ];
+                            header("HTTP/1.0 200 OK");
+                            return json_encode($data);
+                        }
+                    } else {
+                        $data = [
+                            'status' => 401,
+                            'message' => 'Account not verified',
+                        ];
+                        header("HTTP/1.0 401 Unauthorized");
+                        return json_encode($data);
+                    }
                 } else {
                     $data = [
-                        'status' => 500,
-                        'message' => 'Failed to delte user from signup table'
+                        'status' => 401,
+                        'message' => 'Invalid Email or Password',
                     ];
-                    header("HTTP/1.0 500 Internal Server Error");
+                    header("HTTP/1.0 401 Unauthorized");
                     return json_encode($data);
                 }
             } else {
                 $data = [
                     'status' => 500,
-                    'message' => 'Failed to delte user from signup table'
+                    'message' => 'Internal Server Error',
                 ];
                 header("HTTP/1.0 500 Internal Server Error");
                 return json_encode($data);
             }
         }
+    } else {
+        return error422('Enter Email and Password');
     }
 }
 //INSERT & DELETE VOLUNTEER SIGNUP TO ACCOUNT END
 
 //INSERT & DELETE VOLUNTEER SIGNUP TO ACCOUNT START
-function insDelDonorAcc($userParams)
+function loginDonorAcc($userInput)
 {
     global $con;
 
+    if (isset($userInput['email']) && isset($userInput['password'])) {
+        $email = mysqli_real_escape_string($con, $userInput['email']);
+        $password = mysqli_real_escape_string($con, $userInput['password']);
 
-    $singup_id = mysqli_real_escape_string($con, $userParams['signup_id']);
+        $hashing = md5($password);
 
-    if (empty(trim($singup_id))) {
-        return error422('No VolunteerID found in url');
-    } else {
-        $query1 = "SELECT * FROM donor_signup WHERE signup_id = '$singup_id' ";
-        $result1 = mysqli_query($con, $query1);
-        $donorData = mysqli_fetch_assoc($result1);
-
-        if (!$donorData) {
-            $data = [
-                'status' => 404,
-                'message' => 'Volunteer not found',
-            ];
-            header("HTTP/1.0 404 Not FOund");
-            return json_encode($data);
+        if (empty(trim($email))) {
+            return error422('Enter valid email');
+        } elseif (empty(trim($password))) {
+            return error422('Enter valid password');
         } else {
-            $donor_idtemp = mysqli_real_escape_string($con, $donorData['signup_id']);
-            $last_name = mysqli_real_escape_string($con, $donorData['last_name']);
-            $first_name = mysqli_real_escape_string($con, $donorData['first_name']);
-            $middle_name = mysqli_real_escape_string($con, $donorData['middle_name']);
-            $dept_category_id = mysqli_real_escape_string($con, $donorData['dept_category_id']);
-            $email = mysqli_real_escape_string($con, $donorData['email']);
-            $password = mysqli_real_escape_string($con, $donorData['password']);
-            $contact_info = mysqli_real_escape_string($con, $donorData['contact_info']);
-
-            $donor_id = 'DONOR' . date('Y-d') . ' - ' . $donor_idtemp;
+            $query = "SELECT account_id, verified_at, session_expire FROM 
+                    account_tbl 
+                WHERE 
+                    email = '$email' AND 
+                    password = '$hashing' AND 
+                    account_id LIKE 'DONOR - %';";
+            $result = mysqli_query($con, $query);
 
 
-            $query2 = "INSERT INTO 
-            donors_acc_tbl(
-                volunteer_id, 
-                last_name, 
-                first_name, 
-                middle_name, 
-                email, 
-                password, 
-                contact_info, 
-                dept_category_id, 
-                section, 
-                designnation_id) 
-            VALUES(
-                '$donor_id', 
-                '$last_name', 
-                '$first_name', 
-                '$middle_name', 
-                '$dept_category_id', 
-                '$email', 
-                '$password', 
-                '$contact_info')";
-            $result2 = mysqli_query($con, $query2);
+            if ($result) {
+                if (mysqli_num_rows($result) == 1) {
+                    $res = mysqli_fetch_assoc($result);
+                    if ($res['verified_at'] != null) {
+                        $session_expire = $res['session_expire'];
 
-            if ($result2) {
-                $query3 = "DELETE FROM donor_signup WHERE signup_id = $singup_id";
-                $result3 = mysqli_query($con, $query3);
+                        if (time() > $session_expire) {
+                            $session_token = bin2hex(random_bytes(32));
+                            $expire = time() + 3600;
 
-                if ($result3) {
-                    $data = [
-                        'status' => 201,
-                        'message' => 'User moved to accounts from signup successfully',
-                    ];
-                    header("HTTP/1.0 201 Moved");
-                    return json_encode($data);
+                            // Store session token in the database for the user
+                            $account_id = $res['account_id'];
+                            $update_token_query = "UPDATE account_tbl SET session_token='$session_token', session_expire = '$expire' WHERE account_id='$account_id'";
+                            mysqli_query($con, $update_token_query);
+
+                            // Set the session token as an HTTP-only, secure cookie
+                            setcookie('session_token', $session_token, [
+                                'expires' => $expire, // 1-hour expiration
+                                'path' => '/',
+                                'httponly' => true,  // Prevent JavaScript access
+                                'secure' => true,    // Use HTTPS
+                                'samesite' => 'Strict', // CSRF protection
+                            ]);
+
+                            $data = [
+                                'status' => 201,
+                                'message' => 'Session Invalid, generated a new token: Logged In Successfully',
+                                'data' => $res,
+                            ];
+                            header("HTTP/1.0 200 OK");
+                            return json_encode($data);
+                        } else {
+                            $data = [
+                                'status' => 201,
+                                'message' => 'Session is still valid. Logged In Successfully',
+                                'data' => $res,
+                            ];
+                            header("HTTP/1.0 200 OK");
+                            return json_encode($data);
+                        }
+                    } else {
+                        $data = [
+                            'status' => 401,
+                            'message' => 'Account not verified',
+                        ];
+                        header("HTTP/1.0 401 Unauthorized");
+                        return json_encode($data);
+                    }
                 } else {
                     $data = [
-                        'status' => 500,
-                        'message' => 'Failed to delte user from signup table'
+                        'status' => 401,
+                        'message' => 'Invalid Email or Password',
                     ];
-                    header("HTTP/1.0 500 Internal Server Error");
+                    header("HTTP/1.0 401 Unauthorized");
                     return json_encode($data);
                 }
             } else {
                 $data = [
                     'status' => 500,
-                    'message' => 'Failed to delte user from signup table'
+                    'message' => 'Internal Server Error',
                 ];
                 header("HTTP/1.0 500 Internal Server Error");
                 return json_encode($data);
             }
         }
+    } else {
+        return error422('Enter Email and Password');
     }
 }
 //INSERT & DELETE VOLUNTEER SIGNUP TO ACCOUNT END
@@ -643,27 +758,31 @@ function insertPhase3($userInput)
 //INSERT PHASE 3 END
 
 //DELETE DONOR START
-function deleteDonor($userParams)
+function deleteAccount($account_id)
 {
     global $con;
 
-    $donor_id = mysqli_real_escape_string($con, $userParams);
-
-    if (empty(trim($donor_id))) {
+    if (empty(trim($account_id))) {
         return error422('Enter valid donor ID');
     } else {
-        $query = "UPDATE donors_acc_tbl 
+        $query = "UPDATE account_tbl 
             SET 
+                session_token = NULL,
+                session_expire = NULL,
                 last_name = 'Deleted', 
                 first_name = 'Deleted', 
                 middle_name = 'Deleted', 
-                dept_category_id = 5, 
+                section = 'Deleted',
+                dept_category_id = 5,
+                designation_id = 5, 
                 email = 'Deleted', 
                 password = 'Deleted', 
-                contact_info = 'Deleted', 
-                acc_status_id = 2 
+                contact_info = 'Deleted',
+                total_hours = 0,
+                acc_status_id = 2,
+                updated_at = NOW()
             WHERE 
-                donor_id = '$donor_id'";
+                account_id = '$account_id'";
         $result = mysqli_query($con, $query);
 
         if ($result) {
@@ -684,52 +803,6 @@ function deleteDonor($userParams)
     }
 }
 //DELETE DONOR END
-
-//DELETE VOLUNTEER START
-function deleteVolunteer($userParams)
-{
-    global $con;
-
-    $volunteer_id = mysqli_real_escape_string($con, $userParams);
-
-    if (empty(trim($volunteer_id))) {
-        return error422('Enter valid volunteer ID');
-    } else {
-        $query = "UPDATE 
-            volunteer_acc_tbl 
-        SET 
-            last_name = 'Deleted', 
-            first_name = 'Deleted',
-            middle_name = 'Deleted',
-            email = 'Deleted',
-            password = 'Deleted',
-            contact_info = 'Deleted',
-            total_hours = 0,
-            dept_category_id = 'Deleted',
-            section = 'Deleted',
-            designation_id = 'Deleted',
-            acc_status_id = 2
-        WHERE volunteer_id = '$volunteer_id'";
-        $result = mysqli_query($con, $query);
-
-        if ($result) {
-            $data = [
-                'status' => 200,
-                'message' => 'Volunteer deleted successfully',
-            ];
-            header("HTTP/1.0 200 OK");
-            return json_encode($data);
-        } else {
-            $data = [
-                'status' => 500,
-                'message' => 'Internal Server Error',
-            ];
-            header("HTTP/1.0 500 Internal Server Error");
-            return json_encode($data);
-        }
-    }
-}
-//DELETE VOLUNTEER END
 
 //DELETE DONOR DONATION START
 function deleteDonation($userParams)
@@ -765,10 +838,10 @@ function deleteDonation($userParams)
                     return json_encode($data);
                 } else {
                     $data = [
-                        'status' => 404,
-                        'message' => 'More Donation of id ' . $donation_id . ' found',
+                        'status' => 500,
+                        'message' => 'Internal Server Error',
                     ];
-                    header("HTTP/1.0 404 Not Found");
+                    header("HTTP/1.0 500 Internal Server Error");
                     return json_encode($data);
                 }
             } else {
@@ -854,24 +927,27 @@ function updateDonationItems($userParams, $userInput)
 
 
 // UPDATE DONOR ACC START
-function updateDonorAcc($userParams, $userInput)
+function updateAccount($userParams, $userInput)
 {
     global $con;
 
-    if (!isset($userParams['donor_id'])) {
-        return error422('Donor ID not found in URL');
-    } elseif ($userParams['donor_id'] == null) {
-        return error422('Donor ID is null');
+    if (!isset($userParams['account_id'])) {
+        return error422('Account ID not found in URL');
+    } elseif ($userParams['account_id'] == null) {
+        return error422('account id is null');
     } else {
-        $donor_id = mysqli_real_escape_string($con, $userParams['donor_id']);
+        $account_id = mysqli_real_escape_string($con, $userParams['account_id']);
 
         $last_name = mysqli_real_escape_string($con, $userInput['last_name']);
         $first_name = mysqli_real_escape_string($con, $userInput['first_name']);
         $middle_name = mysqli_real_escape_string($con, $userInput['middle_name']);
+        $section = mysqli_real_escape_string($con, $userInput['section']);
         $dept_category_id = mysqli_real_escape_string($con, $userInput['dept_category_id']);
+        $designation_id = mysqli_real_escape_string($con, $userInput['designation_id']);
         $email = mysqli_real_escape_string($con, $userInput['email']);
         $password = mysqli_real_escape_string($con, $userInput['password']);
         $contact_info = mysqli_real_escape_string($con, $userInput['contact_info']);
+
 
         if (empty(trim($last_name))) {
             return error422('Enter valid last name');
@@ -879,8 +955,12 @@ function updateDonorAcc($userParams, $userInput)
             return error422('Enter valid first name');
         } elseif (empty(trim($middle_name))) {
             return error422('Enter valid middle name');
+        } elseif (empty(trim($section))) {
+            return error422('Enter valid section');
         } elseif (empty(trim($dept_category_id))) {
             return error422('Enter valid department category');
+        } elseif (empty(trim($designation_id))) {
+            return error422('Enter valid designation id');
         } elseif (empty(trim($email))) {
             return error422('Enter valid email');
         } elseif (empty(trim($password))) {
@@ -888,17 +968,20 @@ function updateDonorAcc($userParams, $userInput)
         } elseif (empty(trim($contact_info))) {
             return error422('Enter valid contact information');
         } else {
-            $query = "UPDATE donors_acc_tbl 
+            $query = "UPDATE account_tbl 
                 SET 
                     last_name = '$last_name', 
                     first_name = '$first_name', 
                     middle_name = '$middle_name', 
-                    dept_category_id = '$dept_category_id', 
+                    section = '$section',
+                    dept_category_id = '$dept_category_id',
+                    designation_id = '$designation_id', 
                     email = '$email', 
                     password = '$password', 
                     contact_info = '$contact_info' 
+                    updated_at = NOW()
                 WHERE 
-                    donor_id = '$donor_id'";
+                    account_id = '$account_id'";
             $result = mysqli_query($con, $query);
 
             if ($result) {
@@ -920,82 +1003,6 @@ function updateDonorAcc($userParams, $userInput)
     }
 }
 // UPDATE DONOR ACC END
-
-// UPDATE VOLUNTEER ACC START
-function updateVolunteerAcc($userParams, $userInput)
-{
-    global $con;
-
-    if (!isset($userParams['volunteer_id'])) {
-        return error422('Volunteer ID not found in URL');
-    } elseif ($userParams['volunteer_id'] == null) {
-        return error422('Volunteer ID is null');
-    } else {
-        $volunteer_id = mysqli_real_escape_string($con, $userParams['volunteer_id']);
-
-        $last_name = mysqli_real_escape_string($con, $userInput['last_name']);
-        $first_name = mysqli_real_escape_string($con, $userInput['first_name']);
-        $middle_name = mysqli_real_escape_string($con, $userInput['middle_name']);
-        $email = mysqli_real_escape_string($con, $userInput['email']);
-        $password = mysqli_real_escape_string($con, $userInput['password']);
-        $contact_info = mysqli_real_escape_string($con, $userInput['contact_info']);
-        $dept_category_id = mysqli_real_escape_string($con, $userInput['dept_category_id']);
-        $section = mysqli_real_escape_string($con, $userInput['section']);
-        $designation_id = mysqli_real_escape_string($con, $userInput['designation_id']);
-
-        if (empty(trim($last_name))) {
-            return error422('Enter valid last name');
-        } elseif (empty(trim($first_name))) {
-            return error422('Enter valid first name');
-        } elseif (empty(trim($middle_name))) {
-            return error422('Enter valid middle name');
-        } elseif (empty(trim($email))) {
-            return error422('Enter valid email');
-        } elseif (empty(trim($password))) {
-            return error422('Enter valid password');
-        } elseif (empty(trim($contact_info))) {
-            return error422('Enter valid contact information');
-        } elseif (empty(trim($dept_category_id))) {
-            return error422('Enter valid department category');
-        } elseif (empty(trim($section))) {
-            return error422('Enter valid section');
-        } elseif (empty(trim($designation_id))) {
-            return error422('Enter valid designation');
-        } else {
-            $query = "UPDATE volunteer_acc_tbl 
-                SET 
-                    last_name = '$last_name', 
-                    first_name = '$first_name', 
-                    middle_name = '$middle_name', 
-                    email = '$email', 
-                    password = '$password', 
-                    contact_info = '$contact_info', 
-                    dept_category_id = '$dept_category_id', 
-                    section = '$section', 
-                    designation_id = '$designation_id' 
-                WHERE 
-                    volunteer_id = '$volunteer_id'";
-            $result = mysqli_query($con, $query);
-
-            if ($result) {
-                $data = [
-                    'status' => 200,
-                    'message' => 'Volunteer updated successfully',
-                ];
-                header("HTTP/1.0 200 OK");
-                return json_encode($data);
-            } else {
-                $data = [
-                    'status' => 500,
-                    'message' => 'Internal Server Error',
-                ];
-                header("HTTP/1.0 500 Internal Server Error");
-                return json_encode($data);
-            }
-        }
-    }
-}
-// UPDATE VOLUNTEER ACC END
 
 // READ DONOR DONATION ON ACCOUNT START
 function readDonationDonor($userParams)
@@ -1112,30 +1119,30 @@ function readVolunteerProfile($userParams)
 {
     global $con;
 
-    if (!isset($userParams['volunteer_id'])) {
-        return error422('Volunteer ID not found in URL');
-    } elseif ($userParams['volunteer_id'] == null) {
-        return error422('Volunteer ID is null');
+    if (!isset($userParams['account_id'])) {
+        return error422('Account ID not found in URL');
+    } elseif ($userParams['account_id'] == null) {
+        return error422('Account ID is null');
     } else {
-        $volunteer_id = mysqli_real_escape_string($con, $userParams['volunteer_id']);
+        $account_id = mysqli_real_escape_string($con, $userParams['account_id']);
 
         $query = "SELECT 
-            volunteer_acc_tbl.last_name,
-            volunteer_acc_tbl.first_name,
-            volunteer_acc_tbl.middle_name,
-            volunteer_acc_tbl.email,
-            volunteer_acc_tbl.password,
-            volunteer_acc_tbl.contact_info,
-            volunteer_acc_tbl.total_hours,
+            account_tbl.last_name,
+            account_tbl.first_name,
+            account_tbl.middle_name,
+            account_tbl.section,
             dept_category_tbl.category_name,
-            volunteer_acc_tbl.section,
-            designation_category_tbl.designation_name
+            designation_category_tbl.designation_name,
+            account_tbl.email,
+            account_tbl.password,
+            account_tbl.contact_info
+            account_tbl.total_hours
         FROM
-            volunteer_acc_tbl
-        INNER JOIN dept_category_tbl ON volunteer_acc_tbl.dept_category_id = dept_category_tbl.dept_category_id
-        INNER JOIN designation_category_tbl ON volunteer_acc_tbl.designation_id = designation_category_tbl.designation_id 
+            account_tbl
+        INNER JOIN dept_category_tbl ON account_tbl.dept_category_id = dept_category_tbl.dept_category_id
+        INNER JOIN designation_category_tbl ON account_tbl.designation_id = designation_category_tbl.designation_id 
         WHERE 
-            volunteer_acc_tbl.volunteer_id = '$volunteer_id'";
+            account_tbl.account_id = '$account_id'";
         $result = mysqli_query($con, $query);
 
         if ($result) {
@@ -1167,26 +1174,29 @@ function readDonorProfile($userParams)
 {
     global $con;
 
-    if (!isset($userParams['donor_id'])) {
-        return error422('Donor ID not found in URL');
-    } elseif ($userParams['donor_id'] == null) {
-        return error422('Donor ID is null');
+    if (!isset($userParams['account_id'])) {
+        return error422('Account ID not found in URL');
+    } elseif ($userParams['account_id'] == null) {
+        return error422('Account ID is null');
     } else {
-        $donor_id = mysqli_real_escape_string($con, $userParams['donor_id']);
+        $account_id = mysqli_real_escape_string($con, $userParams['account_id']);
 
         $query = "SELECT 
-            donors_acc_tbl.last_name,
-            donors_acc_tbl.first_name,
-            donors_acc_tbl.middle_name,
+            account_tbl.last_name,
+            account_tbl.first_name,
+            account_tbl.middle_name,
+            account_tbl.section,
             dept_category_tbl.category_name,
-            donors_acc_tbl.email,
-            donors_acc_tbl.password,
-            donors_acc_tbl.contact_info
+            designation_category_tbl.designation_name,
+            account_tbl.email,
+            account_tbl.password,
+            account_tbl.contact_info
         FROM
-            donors_acc_tbl
-        INNER JOIN dept_category_tbl ON donors_acc_tbl.dept_category_id = dept_category_tbl.dept_category_id
+            account_tbl
+        INNER JOIN dept_category_tbl ON account_tbl.dept_category_id = dept_category_tbl.dept_category_id
+        INNER JOIN designation_category_tbl ON account_tbl.designation_id = designation_category_tbl.designation_id 
         WHERE 
-            donors_acc_tbl.donor_id = '$donor_id'";
+            account_tbl.account_id = '$account_id'";
         $result = mysqli_query($con, $query);
 
         if ($result) {
@@ -1195,7 +1205,7 @@ function readDonorProfile($userParams)
 
                 $data = [
                     'status' => 200,
-                    'message' => 'Donor Fetched Successfully ',
+                    'message' => 'Volunteer Fetched Successfully ',
                     'data' => $res,
                 ];
                 header("HTTP/1.0 200 OK");
@@ -1297,13 +1307,13 @@ function readPhase2Log($userParams)
     } elseif ($userParams['volunteer_id'] == null) {
         return error422('Volunteer ID is null');
     } else {
-        $volunteer_id = mysqli_real_escape_string($con, $userParams['volunteer_id']);
+        $account_id = mysqli_real_escape_string($con, $userParams['account_id']);
 
         $query = "SELECT 
             phase2_tbl.log_id, 
             event_tbl.event_name,
-            volunteer_acc_tbl.last_name,
-            volunteer_acc_tbl.first_name,
+            account_tbl.last_name,
+            account_tbl.first_name,
             phase2_tbl.activity,
             phase2_tbl.time_in,
             phase2_tbl.time_out,
@@ -1312,9 +1322,9 @@ function readPhase2Log($userParams)
         FROM
             phase2_tbl
         INNER JOIN event_tbl ON phase2_tbl.event_id = event_tbl.evenet_id
-        INNER JOIN volunteer_acc_tbl ON phase2_tbl.volunteer_id = volunteer_acc_tbl.volunteer_id
+        INNER JOIN account_tbl ON phase2_tbl.account_id = account_tbl.account_id
         WHERE 
-            phase2_tbl.volunteer_id = '$volunteer_id'";
+            phase2_tbl.account_id = '$account_id'";
         $result = mysqli_query($con, $query);
 
         if ($result) {
@@ -1352,18 +1362,18 @@ function readPhase3Log($userParams)
 {
     global $con;
 
-    if (!isset($userParams['volunteer_id'])) {
-        return error422('Volunteer ID not found in URL');
-    } elseif ($userParams['volunteer_id'] == null) {
-        return error422('Volunteer ID is null');
+    if (!isset($userParams['account_id'])) {
+        return error422('Account ID not found in URL');
+    } elseif ($userParams['account_id'] == null) {
+        return error422('Account ID is null');
     } else {
-        $volunteer_id = mysqli_real_escape_string($con, $userParams['volunteer_id']);
+        $account_id = mysqli_real_escape_string($con, $userParams['account_id']);
 
         $query = "SELECT 
             phase3_tbl.log_id, 
             event_tbl.event_name,
-            volunteer_acc_tbl.last_name,
-            volunteer_acc_tbl.first_name,
+            account_tbl.last_name,
+            account_tbl.first_name,
             phase3_tbl.time_in,
             phase3_tbl.time_out,
             phase3_tbl.signature,
@@ -1371,9 +1381,9 @@ function readPhase3Log($userParams)
         FROM
             phase3_tbl
         INNER JOIN event_tbl ON phase3_tbl.event_id = event_tbl.evenet_id
-        INNER JOIN volunteer_acc_tbl ON phase3_tbl.volunteer_id = volunteer_acc_tbl.volunteer_id
+        INNER JOIN volunteer_acc_tbl ON phase3_tbl.account_id = account_tbl.account_id
         WHERE 
-            phase3_tbl.volunteer_id = '$volunteer_id'";
+            phase3_tbl.volunteer_id = '$account_id'";
         $result = mysqli_query($con, $query);
 
         if ($result) {
@@ -1411,15 +1421,15 @@ function updateDonationAccept($userParams)
 {
     global $con;
 
-    if (!isset($userParams['volunteer_id']) || !isset($userParams['donation_id'])) {
+    if (!isset($userParams['account_id']) || !isset($userParams['donation_id'])) {
         return error422('Volunteer ID is missing or Donation ID is missing');
-    } elseif ($userParams['volunteer_id'] == null || $userParams['donation_id'] == null) {
+    } elseif ($userParams['account_id'] == null || $userParams['donation_id'] == null) {
         return error422('Volunteer ID is null or Donation ID is null');
     } else {
-        $volunteer_id = mysqli_real_escape_string($con, $userParams['volunteer_id']);
+        $account_id = mysqli_real_escape_string($con, $userParams['account_id']);
         $donation_id = mysqli_real_escape_string($con, $userParams['donation_id']);
 
-        $query = "UPDATE donation_tbl SET status_id = 3001, received_by = '$volunteer_id' WHERE donation_id = '$donation_id'";
+        $query = "UPDATE donation_tbl SET status_id = 3001, received_by = '$account_id' WHERE donation_id = '$donation_id'";
         $result = mysqli_query($con, $query);
 
         if ($result) {

@@ -2,7 +2,7 @@
 
 header('Access-Control-Allow-Origin:*');
 header('Content-Type: application/json');
-header('Access-Control-Allow-Methods: DELETE, OPTIONS');
+header('Access-Control-Allow-Methods: PUT, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Request-With');
 
 include('../../function.php');
@@ -18,7 +18,7 @@ if ($requestMethod == "OPTIONS") {
     exit();
 }
 
-if ($requestMethod == 'DELETE') {
+if ($requestMethod == 'PUT') {
     $session_token = $_COOKIE['session_token'] ?? '';
 
     $query = "SELECT account_id, session_expire FROM account_tbl WHERE session_token = '$session_token'";
@@ -43,8 +43,12 @@ if ($requestMethod == 'DELETE') {
         } else { //proceed with function call since session is still valid
             $inputData = json_decode(file_get_contents("php://input"), true);
 
-            $deleteDonation = deleteDonation($_GET);
-            echo $deleteDonation;
+            if (empty($inputData)) {
+                $deleteAccount = deleteAccount($account_id);
+            } else {
+                $deleteAccount = deleteAccount($account_id);
+            }
+            echo $deleteAccount;
             exit();
         }
     } else { //prompt the user to login if session token is not found/null
