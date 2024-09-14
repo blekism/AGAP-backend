@@ -1,4 +1,4 @@
 vendor
 composer.json
 composer.lock
-/api/creds.php
+api/creds.php
