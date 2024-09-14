@@ -2,7 +2,7 @@
 
 require __DIR__ . '/../inc/dbcon.php';
 require __DIR__ . '/../vendor/autoload.php';
-require __DIR__ . './creds.php';
+require './creds.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
