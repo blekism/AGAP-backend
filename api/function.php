@@ -2,6 +2,7 @@
 
 require __DIR__ . '/../inc/dbcon.php';
 require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . './creds.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
@@ -126,7 +127,7 @@ function insertDonation($userInput, $account_id)
 //INSERT VOLUNTEER START
 function signVolunteer($userInput)
 {
-    global $con;
+    global $myEmail, $myPassword, $con;
 
     if (isset($userInput['email']) && isset($userInput['password'])) {
         $account_id = 'VOLUN - ' . date('Y-d') . substr(uniqid(), -5);
@@ -168,13 +169,13 @@ function signVolunteer($userInput)
                 $mail->isSMTP();                                            //Send using SMTP
                 $mail->Host       = 'smtp.gmail.com';                     //Set the SMTP server to send through
                 $mail->SMTPAuth   = true;                                   //Enable SMTP authentication
-                $mail->Username   = 'cristianlaviano@gmail.com';                     //SMTP username
-                $mail->Password   = 'cyog eepg pnqa nziy';                               //SMTP password
+                $mail->Username   = $myEmail;                     //SMTP username
+                $mail->Password   = $myPassword;                               //SMTP password
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;            //Enable implicit TLS encryption
                 $mail->Port       = 465;                                    //TCP port to connect to; use 587 if you have set `SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS`
 
                 //Recipients
-                $mail->setFrom('cristianlaviano@gmail.com', 'Mailer');
+                $mail->setFrom($myEmail, 'Mailer');
                 $mail->addAddress($email);
                 $verificationCode = substr(number_format(time() * rand(), 0, '', ''), 0, 6);     //Add a recipient
 
@@ -250,7 +251,7 @@ function signVolunteer($userInput)
 //INSERT VOLUNTEER START
 function signDonor($userInput)
 {
-    global $con;
+    global $myEmail, $myPassword, $con;
 
     if (isset($userInput['email']) && isset($userInput['password'])) {
         $account_id = 'DONOR - ' . date('Y-d') . substr(uniqid(), -5);
@@ -292,13 +293,13 @@ function signDonor($userInput)
                 $mail->isSMTP();                                            //Send using SMTP
                 $mail->Host       = 'smtp.gmail.com';                     //Set the SMTP server to send through
                 $mail->SMTPAuth   = true;                                   //Enable SMTP authentication
-                $mail->Username   = 'cristianlaviano@gmail.com';                     //SMTP username
-                $mail->Password   = 'cyog eepg pnqa nziy';                               //SMTP password
+                $mail->Username   = $myEmail;                     //SMTP username
+                $mail->Password   = $myPassword;                               //SMTP password
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;            //Enable implicit TLS encryption
                 $mail->Port       = 465;                                    //TCP port to connect to; use 587 if you have set `SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS`
 
                 //Recipients
-                $mail->setFrom('cristianlaviano@gmail.com', 'Mailer');
+                $mail->setFrom($myEmail, 'Mailer');
                 $mail->addAddress($email);
                 $verificationCode = substr(number_format(time() * rand(), 0, '', ''), 0, 6);     //Add a recipient
 
@@ -404,6 +405,7 @@ function loginVolunteerAcc($userInput)
 
                         if (time() > $session_expire) {
                             $session_token = bin2hex(random_bytes(32));
+                            $expire = time() + (365 * 24 * 60 * 60);
 
                             // Store session token in the database for the user
                             $account_id = $res['account_id'];
@@ -412,7 +414,7 @@ function loginVolunteerAcc($userInput)
 
                             // Set the session token as an HTTP-only, secure cookie
                             setcookie('session_token', $session_token, [
-                                'expires' => time() + 3600, // 1-hour expiration
+                                'expires' => $expire, // 1 year expiration
                                 'path' => '/',
                                 'httponly' => true,  // Prevent JavaScript access
                                 'secure' => true,    // Use HTTPS
@@ -500,7 +502,7 @@ function loginDonorAcc($userInput)
 
                         if (time() > $session_expire) {
                             $session_token = bin2hex(random_bytes(32));
-                            $expire = time() + 3600;
+                            $expire = time() + (30 * 24 * 60 * 60);
 
                             // Store session token in the database for the user
                             $account_id = $res['account_id'];
@@ -509,7 +511,7 @@ function loginDonorAcc($userInput)
 
                             // Set the session token as an HTTP-only, secure cookie
                             setcookie('session_token', $session_token, [
-                                'expires' => $expire, // 1-hour expiration
+                                'expires' => $expire, // 1 year expiration
                                 'path' => '/',
                                 'httponly' => true,  // Prevent JavaScript access
                                 'secure' => true,    // Use HTTPS
