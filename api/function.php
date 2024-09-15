@@ -2,7 +2,7 @@
 
 require __DIR__ . '/../inc/dbcon.php';
 require __DIR__ . '/../vendor/autoload.php';
-require './creds.php';
+require 'creds.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
@@ -502,7 +502,7 @@ function loginDonorAcc($userInput)
 
                         if (time() > $session_expire) {
                             $session_token = bin2hex(random_bytes(32));
-                            $expire = time() + (30 * 24 * 60 * 60);
+                            $expire = time() + (365 * 24 * 60 * 60);
 
                             // Store session token in the database for the user
                             $account_id = $res['account_id'];
@@ -929,7 +929,7 @@ function updateDonationItems($userParams, $userInput)
 
 
 // UPDATE DONOR ACC START
-function updateAccount($userParams, $userInput)
+function updateAccount($account_id, $userInput)
 {
     global $con;
 
@@ -938,7 +938,6 @@ function updateAccount($userParams, $userInput)
     } elseif ($userParams['account_id'] == null) {
         return error422('account id is null');
     } else {
-        $account_id = mysqli_real_escape_string($con, $userParams['account_id']);
 
         $last_name = mysqli_real_escape_string($con, $userInput['last_name']);
         $first_name = mysqli_real_escape_string($con, $userInput['first_name']);
@@ -1419,7 +1418,7 @@ function readPhase3Log($userParams)
 // READ PHASE 3 END
 
 // UPDATE DONATION ACCEPT START
-function updateDonationAccept($userParams)
+function updateDonationAccept($userParams, $account_id)
 {
     global $con;
 
@@ -1428,7 +1427,6 @@ function updateDonationAccept($userParams)
     } elseif ($userParams['account_id'] == null || $userParams['donation_id'] == null) {
         return error422('Volunteer ID is null or Donation ID is null');
     } else {
-        $account_id = mysqli_real_escape_string($con, $userParams['account_id']);
         $donation_id = mysqli_real_escape_string($con, $userParams['donation_id']);
 
         $query = "UPDATE donation_tbl SET status_id = 3001, received_by = '$account_id' WHERE donation_id = '$donation_id'";

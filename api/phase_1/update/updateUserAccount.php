@@ -44,11 +44,11 @@ if ($requestMethod == 'PUT') {
             $inputData = json_decode(file_get_contents("php://input"), true);
 
             if (empty($inputData)) {
-                $updateDonationItems = updateDonationItems($_GET, $_POST);
+                $updateAccount = updateAccount($account_id, $_POST);
             } else {
-                $updateDonationItems = updateDonationItems($_GET, $inputData);
+                $updateAccount = updateAccount($account_id, $inputData);
             }
-            echo $updateDonationItems;
+            echo $updateAccount;
             exit();
         }
     } else { //prompt the user to login if session token is not found/null
