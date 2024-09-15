@@ -19,6 +19,39 @@ function error422($message)
     exit();
 }
 
+function sendMail($verificationCode, $email)
+{
+    global $myEmail, $myPassword;
+    //gawing function ang send ng email to shorten code
+    $mail = new PHPMailer(true);
+    try {
+        //Server settings
+        $mail->SMTPDebug = SMTP::DEBUG_SERVER;                      //Enable verbose debug output
+        $mail->isSMTP();                                            //Send using SMTP
+        $mail->Host       = 'smtp.gmail.com';                     //Set the SMTP server to send through
+        $mail->SMTPAuth   = true;                                   //Enable SMTP authentication
+        $mail->Username   = $myEmail;                     //SMTP username
+        $mail->Password   = $myPassword;                               //SMTP password
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;            //Enable implicit TLS encryption
+        $mail->Port       = 465;                                    //TCP port to connect to; use 587 if you have set `SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS`
+
+        //Recipients
+        $mail->setFrom($myEmail, 'Mailer');
+        $mail->addAddress($email);     //Add a recipient
+
+        //Content
+        $mail->isHTML(true);                                  //Set email format to HTML
+        $mail->Subject = 'Verification code';
+        $mail->Body    = 'Your verification code is: ' . $verificationCode;
+        $mail->AltBody = 'Your verification code is: ' . $verificationCode;
+
+        $mail->send();
+        echo 'Message has been sent';
+    } catch (Exception $e) {
+        echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+    }
+}
+
 
 //INSERT DONATION START
 function insertDonation($userInput, $account_id)
@@ -127,7 +160,7 @@ function insertDonation($userInput, $account_id)
 //INSERT VOLUNTEER START
 function signVolunteer($userInput)
 {
-    global $myEmail, $myPassword, $con;
+    global $con;
 
     if (isset($userInput['email']) && isset($userInput['password'])) {
         $account_id = 'VOLUN - ' . date('Y-d') . substr(uniqid(), -5);
@@ -140,7 +173,6 @@ function signVolunteer($userInput)
         $dept_category_id = mysqli_real_escape_string($con, $userInput['dept_category_id']);
         $designation_id = mysqli_real_escape_string($con, $userInput['designation_id']);
         $section = mysqli_real_escape_string($con, $userInput['section']);
-        $mail = new PHPMailer(true);
 
         $hashing = md5($password);
 
@@ -163,35 +195,13 @@ function signVolunteer($userInput)
         } elseif (empty(trim($designation_id))) {
             return error422('Enter valid designation');
         } else {
-            try {
-                //Server settings
-                $mail->SMTPDebug = SMTP::DEBUG_SERVER;                      //Enable verbose debug output
-                $mail->isSMTP();                                            //Send using SMTP
-                $mail->Host       = 'smtp.gmail.com';                     //Set the SMTP server to send through
-                $mail->SMTPAuth   = true;                                   //Enable SMTP authentication
-                $mail->Username   = $myEmail;                     //SMTP username
-                $mail->Password   = $myPassword;                               //SMTP password
-                $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;            //Enable implicit TLS encryption
-                $mail->Port       = 465;                                    //TCP port to connect to; use 587 if you have set `SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS`
 
-                //Recipients
-                $mail->setFrom($myEmail, 'Mailer');
-                $mail->addAddress($email);
-                $verificationCode = substr(number_format(time() * rand(), 0, '', ''), 0, 6);     //Add a recipient
+            $verificationCode = substr(number_format(time() * rand(), 0, '', ''), 0, 6);
+            $verification_expiry = time() + 600;
+            sendMail($verificationCode, $email);
 
-
-                //Content
-                $mail->isHTML(true);                                  //Set email format to HTML
-                $mail->Subject = 'Verification code';
-                $mail->Body    = 'Your verification code is: ' . $verificationCode;
-                $mail->AltBody = 'Your verification code is: ' . $verificationCode;
-
-                $mail->send();
-                echo 'Message has been sent';
-
-                //ADD DITO YUNG READ NG ACCOUNT TABLE TO SEE IF MAY GANUN NANG EMAIL
-
-                $query = "INSERT INTO 
+            //ADD DITO YUNG READ NG ACCOUNT TABLE TO SEE IF MAY GANUN NANG EMAIL
+            $query = "INSERT INTO 
             account_tbl(
                 account_id, 
                 last_name, 
@@ -205,6 +215,7 @@ function signVolunteer($userInput)
                 contact_info, 
                 acc_status_id,
                 verification_code,
+                verification_expiry,
                 created_at) 
             VALUES(
                 '$account_id', 
@@ -219,27 +230,25 @@ function signVolunteer($userInput)
                 '$contact_info', 
                  1,
                 '$verificationCode',
+                '$verification_expiry',
                 NOW())";
-                $result = mysqli_query($con, $query);
+            $result = mysqli_query($con, $query);
 
-                if ($result) {
+            if ($result) {
 
-                    $data = [
-                        'status' => 201,
-                        'message' => 'Volunteer Signup Success',
-                    ];
-                    header("HTTP/1.0 201 Inserted");
-                    return json_encode($data);
-                } else {
-                    $data = [
-                        'status' => 422,
-                        'message' => 'Unprocessable entity',
-                    ];
-                    header("HTTP/1.0 422 Unprocessable Entity");
-                    return json_encode($data);
-                }
-            } catch (Exception $e) {
-                echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+                $data = [
+                    'status' => 201,
+                    'message' => 'Volunteer Signup Success',
+                ];
+                header("HTTP/1.0 201 Inserted");
+                return json_encode($data);
+            } else {
+                $data = [
+                    'status' => 422,
+                    'message' => 'Unprocessable entity',
+                ];
+                header("HTTP/1.0 422 Unprocessable Entity");
+                return json_encode($data);
             }
         }
     } else {
@@ -251,7 +260,7 @@ function signVolunteer($userInput)
 //INSERT VOLUNTEER START
 function signDonor($userInput)
 {
-    global $myEmail, $myPassword, $con;
+    global $con;
 
     if (isset($userInput['email']) && isset($userInput['password'])) {
         $account_id = 'DONOR - ' . date('Y-d') . substr(uniqid(), -5);
@@ -287,35 +296,13 @@ function signDonor($userInput)
         } elseif (empty(trim($designation_id))) {
             return error422('Enter valid designation');
         } else {
-            try {
-                //Server settings
-                $mail->SMTPDebug = SMTP::DEBUG_SERVER;                      //Enable verbose debug output
-                $mail->isSMTP();                                            //Send using SMTP
-                $mail->Host       = 'smtp.gmail.com';                     //Set the SMTP server to send through
-                $mail->SMTPAuth   = true;                                   //Enable SMTP authentication
-                $mail->Username   = $myEmail;                     //SMTP username
-                $mail->Password   = $myPassword;                               //SMTP password
-                $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;            //Enable implicit TLS encryption
-                $mail->Port       = 465;                                    //TCP port to connect to; use 587 if you have set `SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS`
 
-                //Recipients
-                $mail->setFrom($myEmail, 'Mailer');
-                $mail->addAddress($email);
-                $verificationCode = substr(number_format(time() * rand(), 0, '', ''), 0, 6);     //Add a recipient
+            $verificationCode = substr(number_format(time() * rand(), 0, '', ''), 0, 6);
+            $verification_expiry = time() + 600;
+            sendMail($verificationCode, $email);
+            //ADD DITO YUNG READ NG ACCOUNT TABLE TO SEE IF MAY GANUN NANG EMAIL
 
-
-                //Content
-                $mail->isHTML(true);                                  //Set email format to HTML
-                $mail->Subject = 'Verification code';
-                $mail->Body    = 'Your verification code is: ' . $verificationCode;
-                $mail->AltBody = 'Your verification code is: ' . $verificationCode;
-
-                $mail->send();
-                echo 'Message has been sent';
-
-                //ADD DITO YUNG READ NG ACCOUNT TABLE TO SEE IF MAY GANUN NANG EMAIL
-
-                $query = "INSERT INTO 
+            $query = "INSERT INTO 
             account_tbl(
                 account_id, 
                 last_name, 
@@ -329,6 +316,7 @@ function signDonor($userInput)
                 contact_info, 
                 acc_status_id,
                 verification_code,
+                verification_expiry,
                 created_at) 
             VALUES(
                 '$account_id', 
@@ -343,27 +331,25 @@ function signDonor($userInput)
                 '$contact_info', 
                  1,
                 '$verificationCode',
+                '$verification_expiry',
                 NOW())";
-                $result = mysqli_query($con, $query);
+            $result = mysqli_query($con, $query);
 
-                if ($result) {
+            if ($result) {
 
-                    $data = [
-                        'status' => 201,
-                        'message' => 'Donor Signup Success',
-                    ];
-                    header("HTTP/1.0 201 Inserted");
-                    return json_encode($data);
-                } else {
-                    $data = [
-                        'status' => 422,
-                        'message' => 'Unprocessable entity',
-                    ];
-                    header("HTTP/1.0 422 Unprocessable Entity");
-                    return json_encode($data);
-                }
-            } catch (Exception $e) {
-                echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+                $data = [
+                    'status' => 201,
+                    'message' => 'Donor Signup Success',
+                ];
+                header("HTTP/1.0 201 Inserted");
+                return json_encode($data);
+            } else {
+                $data = [
+                    'status' => 422,
+                    'message' => 'Unprocessable entity',
+                ];
+                header("HTTP/1.0 422 Unprocessable Entity");
+                return json_encode($data);
             }
         }
     } else {
@@ -371,6 +357,72 @@ function signDonor($userInput)
     }
 }
 //INSERT VOLUNTEER END
+
+//UPDATE VERIFICATION START
+function updateVerification($userInput)
+{
+    global $con;
+
+    if (empty(trim($userInput['verification_code']))) {
+        return error422('Enter valid verification code');
+    } else {
+        $verificationCode = mysqli_real_escape_string($con, $userInput['verification_code']);
+
+        $query2 = "SELECT email, verification_expiry FROM account_tbl WHERE verification_code = '$verificationCode'";
+        $result2 = mysqli_query($con, $query2);
+
+        if ($result2 && mysqli_num_rows($result2) == 1) {
+            $res = mysqli_fetch_assoc($result2);
+            $expire = $res['verification_expiry'];
+            $email = $res['email'];
+            if (time() > $expire) { //if expired, lalabas link sa baba to resend verification code using the user's email address lang ulit 
+                $newCode = substr(number_format(time() * rand(), 0, '', ''), 0, 6);
+                $newExpiry = time() + 600;
+
+                $query3 = "UPDATE account_tbl SET verification_code = '$newCode', verification_expiry = '$newExpiry' WHERE verification_code = '$verificationCode'";
+                $result3 = mysqli_query($con, $query3);
+
+                sendMail($newCode, $email);
+
+                if ($result3) {
+                    $data = [
+                        'status' => 401,
+                        'message' => 'Verification code expired, new code sent to email',
+                    ];
+                    header("HTTP/1.0 401 Unauthorized");
+                    return json_encode($data);
+                } else {
+                    $data = [
+                        'status' => 500,
+                        'message' => 'Internal Server Error',
+                    ];
+                    header("HTTP/1.0 500 Internal Server Error");
+                    return json_encode($data);
+                }
+            } else {
+                $query = "UPDATE account_tbl SET verified_at = NOW(), verification_code = NULL, verification_expiry = NULL WHERE verification_code = '$verificationCode'";
+                $result = mysqli_query($con, $query);
+
+                if ($result) {
+                    $data = [
+                        'status' => 200,
+                        'message' => 'Account verification successful',
+                    ];
+                    header("HTTP/1.0 200 OK");
+                    return json_encode($data);
+                } else {
+                    $data = [
+                        'status' => 500,
+                        'message' => 'Internal Server Error',
+                    ];
+                    header("HTTP/1.0 500 Internal Server Error");
+                    return json_encode($data);
+                }
+            }
+        }
+    }
+}
+//UPDATE VERIFICATION END
 
 //INSERT & DELETE VOLUNTEER SIGNUP TO ACCOUNT START
 function loginVolunteerAcc($userInput)
@@ -388,7 +440,7 @@ function loginVolunteerAcc($userInput)
         } elseif (empty(trim($password))) {
             return error422('Enter valid password');
         } else {
-            $query = "SELECT account_id, verified_at, expire FROM 
+            $query = "SELECT account_id, verified_at, session_expire FROM 
                     account_tbl 
                 WHERE 
                     email = '$email' AND 
@@ -409,7 +461,7 @@ function loginVolunteerAcc($userInput)
 
                             // Store session token in the database for the user
                             $account_id = $res['account_id'];
-                            $update_token_query = "UPDATE account_tbl SET session_token='$session_token' WHERE account_id='$account_id'";
+                            $update_token_query = "UPDATE account_tbl SET session_token='$session_token', session_expire = '$expire' WHERE account_id='$account_id'";
                             mysqli_query($con, $update_token_query);
 
                             // Set the session token as an HTTP-only, secure cookie
