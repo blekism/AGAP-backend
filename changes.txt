@@ -18,15 +18,19 @@ delete account and delete donation updated for session check //
 need pa gawan ng session checks:
 phase 1 lahat ng read //
 phase 1 lahat ng update //
-iupdate yung function nila na irecieve na yung id directly from session check
-phase 2 lahat ng insert
-phase 2 lahat ng read 
+iupdate yung function nila na irecieve na yung id directly from session check //
+phase 2 lahat ng insert //
+phase 2 lahat ng read //
 
 gumawa ng way para ma invalidate yung verification code once used na//
 resend ng verification if expired//
 gawin yung email verification function main script na //
 
 last idagdag yung websocket communication
+
+
+
+
 
 
 

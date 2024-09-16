@@ -686,13 +686,13 @@ function insertEvent($userInput)
 
 
 //INSERT PHASE 2 START
-function insertPhase2($userInput)
+function insertPhase2($userInput, $account_id)
 {
 
     global $con;
 
+    $log_id = 'LOG-PHASE2' . date('Y-d') . '-' . uniqid();
     $event_id = mysqli_real_escape_string($con, $userInput['event_id']);
-    $volunteer_id = mysqli_real_escape_string($con, $userInput['volunteer_id']);
     $activity = mysqli_real_escape_string($con, $userInput['activity']);
     $time_in = mysqli_real_escape_string($con, $userInput['time_in']);
     $time_out = mysqli_real_escape_string($con, $userInput['time_out']);
@@ -702,9 +702,6 @@ function insertPhase2($userInput)
     if (empty(trim($event_id))) {
 
         return error422('Enter event id');
-    } elseif (empty(trim($volunteer_id))) {
-
-        return error422('Enter volunteer id');
     } elseif (empty(trim($activity))) {
 
         return error422('Enter activity');
@@ -722,8 +719,8 @@ function insertPhase2($userInput)
         return error422('Enter date');
     } else {
 
-        $query = "INSERT INTO phase2_tbl (event_id, volunteer_id, activity, time_in, time_out,  signature, date) 
-        VALUES ('$event_id','$volunteer_id','$activity','$time_in','$time_out','$signature','$date')";
+        $query = "INSERT INTO phase2_tbl (log_id, event_id, volunteer_id, activity, time_in, time_out,  signature, date) 
+        VALUES ('$log_id','$event_id','$account_id','$activity','$time_in','$time_out','$signature','$date')";
         $result = mysqli_query($con, $query);
 
         if ($result) {
@@ -748,13 +745,12 @@ function insertPhase2($userInput)
 //INSERT PHASE 2 END
 
 //INSERT PHASE 3 START
-function insertPhase3($userInput)
+function insertPhase3($userInput, $account_id)
 {
     global $con;
 
-    $log_id = 'LOG' . date('Y') . '-' . uniqid();
+    $log_id = 'LOG-PHASE3' . date('Y-d') . '-' . uniqid();
     $event_id = mysqli_real_escape_string($con, $userInput['event_id']);
-    $volunteer_id = mysqli_real_escape_string($con, $userInput['volunteer_id']);
     $time_in = mysqli_real_escape_string($con, $userInput['time_in']);
     $time_out = mysqli_real_escape_string($con, $userInput['time_out']);
     $signature = mysqli_real_escape_string($con, $userInput['signature']);
@@ -762,8 +758,6 @@ function insertPhase3($userInput)
 
     if (empty(trim($event_id))) {
         return error422('Enter event id');
-    } elseif (empty(trim($volunteer_id))) {
-        return error422('Enter volunteer id');
     } elseif (empty(trim($time_in))) {
         return error422('Enter time in');
     } elseif (empty(trim($time_out))) {
@@ -785,7 +779,7 @@ function insertPhase3($userInput)
             VALUES (
                 '$log_id', 
                 '$event_id',
-                '$volunteer_id',
+                '$account_id',
                 '$time_in',
                 '$time_out',
                 '$signature',
@@ -1351,16 +1345,15 @@ function readEvents()
 // READ EVENTS END
 
 // READ PHASE 2 START
-function readPhase2Log($userParams)
+function readPhase2Log($account_id)
 {
     global $con;
 
-    if (!isset($userParams['volunteer_id'])) {
+    if (!isset($account_id)) {
         return error422('Volunteer ID not found in URL');
-    } elseif ($userParams['volunteer_id'] == null) {
+    } elseif ($account_id == null) {
         return error422('Volunteer ID is null');
     } else {
-        $account_id = mysqli_real_escape_string($con, $userParams['account_id']);
 
         $query = "SELECT 
             phase2_tbl.log_id, 

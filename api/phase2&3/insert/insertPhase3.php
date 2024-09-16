@@ -6,6 +6,9 @@ header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Request-With');
 
 include('../../function.php');
+require '../../../inc/dbcon.php';
+
+global $con;
 
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
@@ -16,15 +19,45 @@ if ($requestMethod == "OPTIONS") {
 }
 
 if ($requestMethod == 'POST') {
-    $inputData = json_decode(file_get_contents("php://input"), true);
+    $session_token = $_COOKIE['session_token'] ?? '';
 
-    if (empty($inputData)) {
-        $insertPhase3 = insertPhase3($_POST);
+    $query = "SELECT account_id, session_expire FROM account_tbl WHERE session_token = '$session_token'";
+    $result = mysqli_query($con, $query);
+
+    if ($result && mysqli_num_rows($result) == 1) {
+        $res = mysqli_fetch_assoc($result);
+        $account_id = $res['account_id'];
+        $session_expire = $res['session_expire'];
+
+        if (time() > $session_expire) {
+            $invalidate_query = "UPDATE account_tbl SET session_token = NULL, session_expire = NULL WHERE account_id = '$account_id'";
+            mysqli_query($con, $invalidate_query);
+
+            $data = [
+                'status' => 401,
+                'message' => 'Session Expired',
+            ];
+            header("HTTP/1.0 401 Unauthorized");
+            echo json_encode($data);
+        } else {
+            $inputData = json_decode(file_get_contents("php://input"), true);
+
+            if (empty($inputData)) {
+                $insertPhase3 = insertPhase3($_POST, $account_id);
+            } else {
+                $insertPhase3 = insertPhase3($inputData, $account_id);
+            }
+            echo $insertPhase3;
+            exit();
+        }
     } else {
-        $insertPhase3 = insertPhase3($inputData);
+        $data = [
+            'status' => 401,
+            'message' => 'Unauthorized',
+        ];
+        header("HTTP/1.0 401 Unauthorized");
+        echo json_encode($data);
     }
-    echo $insertPhase3;
-    exit();
 } else {
     $data = [
         'status' => 405,
