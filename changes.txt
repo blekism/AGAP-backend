@@ -26,13 +26,84 @@ gumawa ng way para ma invalidate yung verification code once used na//
 resend ng verification if expired//
 gawin yung email verification function main script na //
 
+read all donations admin view
+read all associated items per donation admin view
+read items per category admin view(dapat dito dropdown as much as possible to reduce duplicates sa data)
+
 last idagdag yung websocket communication
 
 
+SELECT 
+donation_tbl.donation_id, 
+donor_account.last_name AS donor_lastName, 
+donation_status_tbl.status_name,
+recipient_category_tbl.recipient_type, 
+reciever_account.last_name AS receiver_lastName, 
+donation_tbl.received_date
+FROM donation_tbl
+INNER JOIN account_tbl AS donor_account ON donation_tbl.account_id = donor_account.account_id
+INNER JOIN account_tbl AS reciever_account ON donation_tbl.received_by = reciever_account.account_id
+INNER JOIN donation_status_tbl ON donation_tbl.status_id = donation_status_tbl.status_id
+INNER JOIN recipient_category_tbl ON donation_tbl.recipient_id = recipient_category_tbl.recipient_category_id
+
+all donations listsed
 
 
 
+SELECT donation_items_tbl.item, SUM(donation_items_tbl.in_stock) AS total_Stock
+FROM donation_items_tbl
+WHERE donation_items_tbl.item_category_id = 4000
+GROUP BY 
+donation_items_tbl.item;
+show items as per category with total stock
+(DI PA TO NAGAGAWA)
 
 
+lets say gusto ni admin magdonate 10 bags so eenter nya sa system then submit, then magkakaltas sya ng sampung bags in total sa donation items tbl //
+tapos ang start date kung san sya magsstart magkaltas is yung earliest appearance ng bag item //
+
+
+while ($donationItems = mysqli_fetch_assoc($result1)) {
+                    $in_stock = $donationItems['in_stock'];
+                    $donation_items_id = $donationItems['donation_items_id'];
+
+                    if ($item_to_deduct > 0) {
+                        if ($in_stock >= $item_to_deduct) {
+                            $new_stock = $in_stock - $item_to_deduct;
+                            $query2 = "UPDATE 
+                                    donation_items_tbl 
+                                SET 
+                                    in_stock = '$new_stock' 
+                                WHERE 
+                                    donation_items_id = '$donation_items_id'";
+                            $result2 = mysqli_query($con, $query2);
+
+                            if ($result2) {
+                                $item_to_deduct = 0;
+                            } else {
+                                return error422('Error updating stock');
+                            }
+                        } else {
+                            $item_to_deduct -= $in_stock;
+                            $query3 = "UPDATE donation_items_tbl SET in_stock = 0 WHERE donation_items_id = '$donation_items_id'";
+                            $result3 = mysqli_query($con, $query3);
+
+                            if (!$result3) {
+                                return error422('Error updating stock');
+                            }
+                        }
+                    }
+                }
+
+                if ($item_to_deduct > 0) {
+                    return error422('Not enough stock to deduct the requested amount');
+                } else {
+                    $data = [
+                        'status' => 200,
+                        'message' => 'Stock Deducted Successfully',
+                    ];
+                    header("HTTP/1.0 200 OK");
+                    return json_encode($data);
+                }
 
  

@@ -20,7 +20,7 @@ if ($requestMethod == "OPTIONS") {
 }
 
 if ($requestMethod == 'POST') {
-    $session_token = $_COOKIE['session_token'] ?? '';
+    $session_token = $_COOKIE['donor_session_token'] ?? '';
 
     $query = "SELECT account_id, session_expire FROM account_tbl WHERE session_token = '$session_token'";
     $result = mysqli_query($con, $query);

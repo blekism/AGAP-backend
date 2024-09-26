@@ -19,11 +19,11 @@ if ($requestMethod == 'PUT') {
     $inputData = json_decode(file_get_contents("php://input"), true);
 
     if (empty($inputData)) {
-        $updateVerification = updateVerification($_POST);
+        $deductFromStock = deductFromStock($_POST, $_GET);
     } else {
-        $updateVerification = updateVerification($inputData);
+        $deductFromStock = deductFromStock($inputData, $_GET);
     }
-    echo $updateVerification;
+    echo $deductFromStock;
     exit();
 } else {
     $data = [

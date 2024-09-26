@@ -53,6 +53,101 @@ function sendMail($verificationCode, $email)
 }
 
 
+function deductFromStock($userInput, $userParams)
+{
+    global $con;
+
+    if (!isset($userParams['item'])) {
+        return error422('required items not found');
+    } elseif ($userParams['item'] == null) {
+        return error422('required items are null');
+    } else {
+        $item_to_deduct = mysqli_real_escape_string($con, $userInput['item_amount']);
+        $itemType = mysqli_real_escape_string($con, $userParams['item']);
+
+        if (empty(trim($item_to_deduct))) {
+            return error422('Enter valid item amount');
+        } elseif (empty(trim($itemType))) {
+            return error422('Enter valid item id');
+        } else {
+
+            $query = "SELECT SUM(in_stock) as total_stock
+                       FROM donation_items_tbl
+                       WHERE item = '$itemType' AND in_stock > 0";
+            $result = mysqli_query($con, $query);
+            $row = mysqli_fetch_assoc($result);
+            $total_stock = $row['total_stock'];
+
+            // Check if total available stock is sufficient
+            if ($total_stock < $item_to_deduct) {
+                return error422('Not enough stock to deduct the requested amount');
+            }
+
+
+
+            $query1 = "SELECT 
+                donation_tbl.donation_id,
+                donation_items_tbl.donation_items_id,
+                donation_items_tbl.item, 
+                donation_items_tbl.in_stock,
+                donation_tbl.received_date
+            FROM 
+                donation_items_tbl
+            INNER JOIN 
+                donation_tbl ON  donation_items_tbl.donation_id = donation_tbl.donation_id
+            WHERE 
+                donation_items_tbl.item = '$itemType' AND 
+                donation_items_tbl.in_stock > 0 
+            ORDER BY donation_tbl.received_date ASC";
+            $result1 = mysqli_query($con, $query1);
+
+            if (!$result1) {
+                return error422('Error fetching donation items');
+            } else {
+                while ($donationItems = mysqli_fetch_assoc($result1)) {
+                    $in_stock = $donationItems['in_stock'];
+                    $donation_items_id = $donationItems['donation_items_id'];
+
+                    if ($item_to_deduct > 0) {
+                        if ($in_stock >= $item_to_deduct) {
+                            $new_stock = $in_stock - $item_to_deduct;
+                            $query2 = "UPDATE 
+                                    donation_items_tbl 
+                                SET 
+                                    in_stock = '$new_stock' 
+                                WHERE 
+                                    donation_items_id = '$donation_items_id'";
+                            $result2 = mysqli_query($con, $query2);
+
+                            if ($result2) {
+                                $item_to_deduct = 0;
+                            } else {
+                                return error422('Error updating stock');
+                            }
+                        } else {
+                            $item_to_deduct = $item_to_deduct - $in_stock;
+                            $query3 = "UPDATE donation_items_tbl SET in_stock = 0 WHERE donation_items_id = '$donation_items_id'";
+                            $result3 = mysqli_query($con, $query3);
+
+                            if (!$result3) {
+                                return error422('Error updating stock');
+                            }
+                        }
+                    }
+                }
+
+                $data = [
+                    'status' => 200,
+                    'message' => 'Stock Deducted Successfully',
+                ];
+                header("HTTP/1.0 200 OK");
+                return json_encode($data);
+            }
+        }
+    }
+}
+
+
 //INSERT DONATION START
 function insertDonation($userInput, $account_id)
 {
@@ -465,7 +560,7 @@ function loginVolunteerAcc($userInput)
                             mysqli_query($con, $update_token_query);
 
                             // Set the session token as an HTTP-only, secure cookie
-                            setcookie('session_token', $session_token, [
+                            setcookie('volun_session_token', $session_token, [
                                 'expires' => $expire, // 1 year expiration
                                 'path' => '/',
                                 'httponly' => true,  // Prevent JavaScript access
@@ -562,7 +657,7 @@ function loginDonorAcc($userInput)
                             mysqli_query($con, $update_token_query);
 
                             // Set the session token as an HTTP-only, secure cookie
-                            setcookie('session_token', $session_token, [
+                            setcookie('donor_session_token', $session_token, [
                                 'expires' => $expire, // 1 year expiration
                                 'path' => '/',
                                 'httponly' => true,  // Prevent JavaScript access
@@ -1162,18 +1257,18 @@ function readDonationItems($userParams)
 // READ DONOR DONATION ITEMS END
 
 // READ VOLUNTEER PROFILE START
-function readVolunteerProfile($userParams)
+function readVolunteerProfile($account_id)
 {
     global $con;
 
-    if (!isset($userParams['account_id'])) {
-        return error422('Account ID not found in URL');
-    } elseif ($userParams['account_id'] == null) {
-        return error422('Account ID is null');
-    } else {
-        $account_id = mysqli_real_escape_string($con, $userParams['account_id']);
+    // if (!isset($userParams['account_id'])) {
+    //     return error422('Account ID not found in URL');
+    // } elseif ($userParams['account_id'] == null) {
+    //     return error422('Account ID is null');
+    // } else {
 
-        $query = "SELECT 
+
+    $query = "SELECT 
             account_tbl.last_name,
             account_tbl.first_name,
             account_tbl.middle_name,
@@ -1182,7 +1277,7 @@ function readVolunteerProfile($userParams)
             designation_category_tbl.designation_name,
             account_tbl.email,
             account_tbl.password,
-            account_tbl.contact_info
+            account_tbl.contact_info,
             account_tbl.total_hours
         FROM
             account_tbl
@@ -1190,45 +1285,43 @@ function readVolunteerProfile($userParams)
         INNER JOIN designation_category_tbl ON account_tbl.designation_id = designation_category_tbl.designation_id 
         WHERE 
             account_tbl.account_id = '$account_id'";
-        $result = mysqli_query($con, $query);
+    $result = mysqli_query($con, $query);
 
-        if ($result) {
-            if (mysqli_num_rows($result) == 1) {
-                $res = mysqli_fetch_assoc($result);
+    if ($result) {
+        if (mysqli_num_rows($result) == 1) {
+            $res = mysqli_fetch_assoc($result);
 
-                $data = [
-                    'status' => 200,
-                    'message' => 'Volunteer Fetched Successfully ',
-                    'data' => $res,
-                ];
-                header("HTTP/1.0 200 OK");
-                return json_encode($data);
-            } else {
-                $data = [
-                    'status' => 500,
-                    'message' => 'Internal Server Error',
-                ];
-                header("HTTP/1.0 500 Internal Server Error");
-                return json_encode($data);
-            }
+            $data = [
+                'status' => 200,
+                'message' => 'Volunteer Fetched Successfully ',
+                'data' => $res,
+            ];
+            header("HTTP/1.0 200 OK");
+            return json_encode($data);
+        } else {
+            $data = [
+                'status' => 500,
+                'message' => 'Internal Server Error',
+            ];
+            header("HTTP/1.0 500 Internal Server Error");
+            return json_encode($data);
         }
     }
+    // }
 }
 // READ VOLUNTEER PROFILE END
 
 // READ DONOR PROFILE START
-function readDonorProfile($userParams)
+function readDonorProfile($account_id)
 {
     global $con;
 
-    if (!isset($userParams['account_id'])) {
-        return error422('Account ID not found in URL');
-    } elseif ($userParams['account_id'] == null) {
-        return error422('Account ID is null');
-    } else {
-        $account_id = mysqli_real_escape_string($con, $userParams['account_id']);
-
-        $query = "SELECT 
+    // if (!isset($account_id)) {
+    //     return error422('Account ID not found in URL');
+    // } elseif ($account_id == null) {
+    //     return error422('Account ID is null');
+    // } else {
+    $query = "SELECT 
             account_tbl.last_name,
             account_tbl.first_name,
             account_tbl.middle_name,
@@ -1244,29 +1337,29 @@ function readDonorProfile($userParams)
         INNER JOIN designation_category_tbl ON account_tbl.designation_id = designation_category_tbl.designation_id 
         WHERE 
             account_tbl.account_id = '$account_id'";
-        $result = mysqli_query($con, $query);
+    $result = mysqli_query($con, $query);
 
-        if ($result) {
-            if (mysqli_num_rows($result) == 1) {
-                $res = mysqli_fetch_assoc($result);
+    if ($result) {
+        if (mysqli_num_rows($result) == 1) {
+            $res = mysqli_fetch_assoc($result);
 
-                $data = [
-                    'status' => 200,
-                    'message' => 'Volunteer Fetched Successfully ',
-                    'data' => $res,
-                ];
-                header("HTTP/1.0 200 OK");
-                return json_encode($data);
-            } else {
-                $data = [
-                    'status' => 500,
-                    'message' => 'Internal Server Error',
-                ];
-                header("HTTP/1.0 500 Internal Server Error");
-                return json_encode($data);
-            }
+            $data = [
+                'status' => 200,
+                'message' => 'Donor Fetched Successfully ',
+                'data' => $res,
+            ];
+            header("HTTP/1.0 200 OK");
+            return json_encode($data);
+        } else {
+            $data = [
+                'status' => 500,
+                'message' => 'Internal Server Error',
+            ];
+            header("HTTP/1.0 500 Internal Server Error");
+            return json_encode($data);
         }
     }
+    //}
 }
 // READ DONOR PROFILE END
 
