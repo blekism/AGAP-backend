@@ -149,13 +149,14 @@ function deductFromStock($userInput, $userParams)
 
 
 //INSERT DONATION START
-function insertDonation($userInput, $account_id)
+function insertDonation($userInput)
 {
     global $con;
 
     mysqli_begin_transaction($con);
     $donation_id = 'DONATE' . date('Y-d') . '-' . uniqid();
     $recipient_id = mysqli_real_escape_string($con, $userInput['recipient_id']);
+    $account_id = mysqli_real_escape_string($con, $userInput['account_id']);
     $itemLoop = $userInput['items'];
 
     if (empty(trim($recipient_id))) {
@@ -184,8 +185,8 @@ function insertDonation($userInput, $account_id)
                     $donate_item = mysqli_real_escape_string($con, $item['item']);
                     $item_category_id = mysqli_real_escape_string($con, $item['item_category_id']);
                     $qty = mysqli_real_escape_string($con, $item['qty']);
+                    $in_stock = $qty;
                     $cost = mysqli_real_escape_string($con, $item['cost']);
-                    $donor_signature = mysqli_real_escape_string($con, $item['donor_signature']);
 
                     $query2 = "INSERT INTO 
                         donation_items_tbl(
@@ -193,17 +194,17 @@ function insertDonation($userInput, $account_id)
                             donation_id, 
                             item, 
                             item_category_id,
-                            qty, 
-                            cost, 
-                            donor_signature) 
+                            qty,
+                            in_stock, 
+                            cost) 
                         VALUES(
                             '$donation_items_id',
                             '$donate_id', 
                             '$donate_item', 
                             '$item_category_id', 
                             '$qty', 
-                            '$cost',
-                            '$donor_signature')";
+                            '$in_stock',
+                            '$cost')";
                     $result2 = mysqli_query($con, $query2);
 
 
@@ -258,7 +259,7 @@ function signVolunteer($userInput)
     global $con;
 
     if (isset($userInput['email']) && isset($userInput['password'])) {
-        $account_id = 'VOLUN - ' . date('Y-d') . substr(uniqid(), -5);
+        $account_id = 'USER - ' . date('Y-d') . substr(uniqid(), -5);
         $first_name = mysqli_real_escape_string($con, $userInput['first_name']);
         $last_name = mysqli_real_escape_string($con, $userInput['last_name']);
         $middle_name = mysqli_real_escape_string($con, $userInput['middle_name']);
@@ -358,7 +359,7 @@ function signDonor($userInput)
     global $con;
 
     if (isset($userInput['email']) && isset($userInput['password'])) {
-        $account_id = 'DONOR - ' . date('Y-d') . substr(uniqid(), -5);
+        $account_id = 'USER - ' . date('Y-d') . substr(uniqid(), -5);
         $first_name = mysqli_real_escape_string($con, $userInput['first_name']);
         $last_name = mysqli_real_escape_string($con, $userInput['last_name']);
         $middle_name = mysqli_real_escape_string($con, $userInput['middle_name']);
@@ -540,7 +541,7 @@ function loginVolunteerAcc($userInput)
                 WHERE 
                     email = '$email' AND 
                     password = '$hashing' AND 
-                    account_id LIKE 'VOLUN - %';";
+                    account_id LIKE 'USER - %';";
             $result = mysqli_query($con, $query);
 
 
@@ -637,7 +638,7 @@ function loginDonorAcc($userInput)
                 WHERE 
                     email = '$email' AND 
                     password = '$hashing' AND 
-                    account_id LIKE 'DONOR - %';";
+                    account_id LIKE 'USER - %';";
             $result = mysqli_query($con, $query);
 
 
@@ -1362,6 +1363,35 @@ function readDonorProfile($account_id)
     //}
 }
 // READ DONOR PROFILE END
+
+function readAccountID($account_id)
+{
+    global $con;
+
+    $query = "SELECT account_id FROM account_tbl WHERE account_id = '$account_id'";
+    $result = mysqli_query($con, $query);
+
+    if ($result) {
+        if (mysqli_num_rows($result) == 1) {
+            $res = mysqli_fetch_assoc($result);
+
+            $data = [
+                'status' => 200,
+                'message' => 'Account ID Fetched Successfully ',
+                'data' => $res,
+            ];
+            header("HTTP/1.0 200 OK");
+            return json_encode($data);
+        } else {
+            $data = [
+                'status' => 500,
+                'message' => 'Internal Server Error',
+            ];
+            header("HTTP/1.0 500 Internal Server Error");
+            return json_encode($data);
+        }
+    }
+}
 
 // READ PARTNERS START
 function readPartners()
