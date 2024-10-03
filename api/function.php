@@ -7,6 +7,8 @@ require 'creds.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
+use \Firebase\JWT\JWT;
+use \Firebase\JWT\Key;
 
 function error422($message)
 {
@@ -621,6 +623,7 @@ function loginVolunteerAcc($userInput)
 function loginDonorAcc($userInput)
 {
     global $con;
+    $secret_key = "mamamobading";
 
     if (isset($userInput['email']) && isset($userInput['password'])) {
         $email = mysqli_real_escape_string($con, $userInput['email']);
@@ -633,12 +636,11 @@ function loginDonorAcc($userInput)
         } elseif (empty(trim($password))) {
             return error422('Enter valid password');
         } else {
-            $query = "SELECT account_id, verified_at, session_expire FROM 
+            $query = "SELECT account_id, verified_at FROM 
                     account_tbl 
                 WHERE 
                     email = '$email' AND 
-                    password = '$hashing' AND 
-                    account_id LIKE 'USER - %';";
+                    password = '$hashing';";
             $result = mysqli_query($con, $query);
 
 
@@ -646,42 +648,35 @@ function loginDonorAcc($userInput)
                 if (mysqli_num_rows($result) == 1) {
                     $res = mysqli_fetch_assoc($result);
                     if ($res['verified_at'] != null) {
-                        $session_expire = $res['session_expire'];
+                        $account_id = $res['account_id'];
 
-                        if (time() > $session_expire) {
-                            $session_token = bin2hex(random_bytes(32));
-                            $expire = time() + (365 * 24 * 60 * 60);
+                        // Generate JWT token
+                        $issued_at = time();
+                        $expiration_time = $issued_at + (60 * 60);  // Token valid for 1 hour
+                        $payload = [
+                            'iss' => 'localhost',  // Issuer
+                            'iat' => $issued_at,        // Issued at
+                            'exp' => $expiration_time,  // Expiration time
+                            'sub' => $account_id       // Subject (user's account ID)
+                        ];
 
-                            // Store session token in the database for the user
-                            $account_id = $res['account_id'];
-                            $update_token_query = "UPDATE account_tbl SET session_token='$session_token', session_expire = '$expire' WHERE account_id='$account_id'";
-                            mysqli_query($con, $update_token_query);
+                        $jwt = JWT::encode($payload, $secret_key, 'HS256');
 
-                            // Set the session token as an HTTP-only, secure cookie
-                            setcookie('donor_session_token', $session_token, [
-                                'expires' => $expire, // 1 year expiration
-                                'path' => '/',
-                                'httponly' => true,  // Prevent JavaScript access
-                                'secure' => true,    // Use HTTPS
-                                'samesite' => 'Strict', // CSRF protection
-                            ]);
+                        setcookie('donor_token', $jwt, [
+                            'expires' => $expiration_time,  // Expiration time of the cookie
+                            'path' => '/',                  // Available in the whole domain
+                            'httponly' => true,             // Cannot be accessed via JavaScript
+                            'secure' => true,               // Only sent over HTTPS
+                            'samesite' => 'Strict'          // Prevent CSRF
+                        ]);
 
-                            $data = [
-                                'status' => 201,
-                                'message' => 'Session Invalid, generated a new token: Logged In Successfully',
-                                'data' => $res,
-                            ];
-                            header("HTTP/1.0 200 OK");
-                            return json_encode($data);
-                        } else {
-                            $data = [
-                                'status' => 201,
-                                'message' => 'Session is still valid. Logged In Successfully',
-                                'data' => $res,
-                            ];
-                            header("HTTP/1.0 200 OK");
-                            return json_encode($data);
-                        }
+                        $data = [
+                            'status' => 200,
+                            'message' => 'Login successful',
+                            'token' => $jwt  // Optionally return JWT to client if needed
+                        ];
+                        header("HTTP/1.0 200 OK");
+                        return json_encode($data);
                     } else {
                         $data = [
                             'status' => 401,

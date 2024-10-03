@@ -20,51 +20,51 @@ if ($requestMethod == "OPTIONS") {
 }
 
 if ($requestMethod == 'POST') {
-    $session_token = $_COOKIE['donor_session_token'] ?? '';
+    // $session_token = $_COOKIE['donor_session_token'] ?? '';
 
-    $query = "SELECT account_id, session_expire FROM account_tbl WHERE session_token = '$session_token'";
-    $result = mysqli_query($con, $query);
+    // $query = "SELECT account_id, session_expire FROM account_tbl WHERE session_token = '$session_token'";
+    // $result = mysqli_query($con, $query);
 
-    if ($result && mysqli_num_rows($result) == 1) {
-        $res = mysqli_fetch_assoc($result);
-        $account_id = $res['account_id'];
-        $session_expire = $res['session_expire'];
+    // if ($result && mysqli_num_rows($result) == 1) {
+    //     $res = mysqli_fetch_assoc($result);
+    //     $account_id = $res['account_id'];
+    //     $session_expire = $res['session_expire'];
 
-        if (time() > $session_expire) { //prompt user to login again if session has expired
-            $invalidate_query = "UPDATE account_tbl SET session_token = NULL, session_expire = NULL WHERE account_id = '$account_id'";
-            mysqli_query($con, $invalidate_query);
+    //     if (time() > $session_expire) { //prompt user to login again if session has expired
+    //         $invalidate_query = "UPDATE account_tbl SET session_token = NULL, session_expire = NULL WHERE account_id = '$account_id'";
+    //         mysqli_query($con, $invalidate_query);
 
-            $inputData = json_decode(file_get_contents("php://input"), true);
+    //         $inputData = json_decode(file_get_contents("php://input"), true);
 
-            if (empty($inputData)) {
-                $loginDonorAcc = loginDonorAcc($_POST);
-            } else {
-                $loginDonorAcc = loginDonorAcc($inputData);
-            }
-            echo $loginDonorAcc;
-            exit();
-        } else { //proceed with login since session is still valid
-            $inputData = json_decode(file_get_contents("php://input"), true);
+    //         if (empty($inputData)) {
+    //             $loginDonorAcc = loginDonorAcc($_POST);
+    //         } else {
+    //             $loginDonorAcc = loginDonorAcc($inputData);
+    //         }
+    //         echo $loginDonorAcc;
+    //         exit();
+    //     } else { //proceed with login since session is still valid
+    $inputData = json_decode(file_get_contents("php://input"), true);
 
-            if (empty($inputData)) {
-                $loginDonorAcc = loginDonorAcc($_POST);
-            } else {
-                $loginDonorAcc = loginDonorAcc($inputData);
-            }
-            echo $loginDonorAcc;
-            exit();
-        }
-    } else { //allows user to login after inital verification where session token is not found
-        $inputData = json_decode(file_get_contents("php://input"), true);
-
-        if (empty($inputData)) {
-            $loginDonorAcc = loginDonorAcc($_POST);
-        } else {
-            $loginDonorAcc = loginDonorAcc($inputData);
-        }
-        echo $loginDonorAcc;
-        exit();
+    if (empty($inputData)) {
+        $loginDonorAcc = loginDonorAcc($_POST);
+    } else {
+        $loginDonorAcc = loginDonorAcc($inputData);
     }
+    echo $loginDonorAcc;
+    exit();
+    // }
+    // } else { //allows user to login after inital verification where session token is not found
+    //     $inputData = json_decode(file_get_contents("php://input"), true);
+
+    //     if (empty($inputData)) {
+    //         $loginDonorAcc = loginDonorAcc($_POST);
+    //     } else {
+    //         $loginDonorAcc = loginDonorAcc($inputData);
+    //     }
+    //     echo $loginDonorAcc;
+    //     exit();
+    // }
 } else {
     $data = [
         'status' => 405,
