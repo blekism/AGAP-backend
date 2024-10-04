@@ -55,39 +55,40 @@ function sendMail($verificationCode, $email)
 }
 
 
-function deductFromStock($userInput, $userParams)
+function deductFromStock($userInput)
 {
     global $con;
 
-    if (!isset($userParams['item'])) {
+    if (!isset($userInput['items'])) {
         return error422('required items not found');
-    } elseif ($userParams['item'] == null) {
+    } elseif ($userInput['items'] == null) {
         return error422('required items are null');
     } else {
-        $item_to_deduct = mysqli_real_escape_string($con, $userInput['item_amount']);
-        $itemType = mysqli_real_escape_string($con, $userParams['item']);
+        foreach ($userInput['items'] as $item => $amount) {
+            $item_to_deduct = mysqli_real_escape_string($con, $amount);
+            $itemType = mysqli_real_escape_string($con, $item);
 
-        if (empty(trim($item_to_deduct))) {
-            return error422('Enter valid item amount');
-        } elseif (empty(trim($itemType))) {
-            return error422('Enter valid item id');
-        } else {
+            if (empty(trim($item_to_deduct))) {
+                return error422('Enter valid item amount');
+            } elseif (empty(trim($itemType))) {
+                return error422('Enter valid item id');
+            } else {
 
-            $query = "SELECT SUM(in_stock) as total_stock
+                $query = "SELECT SUM(in_stock) as total_stock
                        FROM donation_items_tbl
                        WHERE item = '$itemType' AND in_stock > 0";
-            $result = mysqli_query($con, $query);
-            $row = mysqli_fetch_assoc($result);
-            $total_stock = $row['total_stock'];
+                $result = mysqli_query($con, $query);
+                $row = mysqli_fetch_assoc($result);
+                $total_stock = $row['total_stock'];
 
-            // Check if total available stock is sufficient
-            if ($total_stock < $item_to_deduct) {
-                return error422('Not enough stock to deduct the requested amount');
-            }
+                // Check if total available stock is sufficient
+                if ($total_stock < $item_to_deduct) {
+                    return error422('Not enough stock to deduct the requested amount');
+                }
 
 
 
-            $query1 = "SELECT 
+                $query1 = "SELECT 
                 donation_tbl.donation_id,
                 donation_items_tbl.donation_items_id,
                 donation_items_tbl.item, 
@@ -101,51 +102,52 @@ function deductFromStock($userInput, $userParams)
                 donation_items_tbl.item = '$itemType' AND 
                 donation_items_tbl.in_stock > 0 
             ORDER BY donation_tbl.received_date ASC";
-            $result1 = mysqli_query($con, $query1);
+                $result1 = mysqli_query($con, $query1);
 
-            if (!$result1) {
-                return error422('Error fetching donation items');
-            } else {
-                while ($donationItems = mysqli_fetch_assoc($result1)) {
-                    $in_stock = $donationItems['in_stock'];
-                    $donation_items_id = $donationItems['donation_items_id'];
+                if (!$result1) {
+                    return error422('Error fetching donation items');
+                } else {
+                    while ($donationItems = mysqli_fetch_assoc($result1)) {
+                        $in_stock = $donationItems['in_stock'];
+                        $donation_items_id = $donationItems['donation_items_id'];
 
-                    if ($item_to_deduct > 0) {
-                        if ($in_stock >= $item_to_deduct) {
-                            $new_stock = $in_stock - $item_to_deduct;
-                            $query2 = "UPDATE 
+                        if ($item_to_deduct > 0) {
+                            if ($in_stock >= $item_to_deduct) {
+                                $new_stock = $in_stock - $item_to_deduct;
+                                $query2 = "UPDATE 
                                     donation_items_tbl 
                                 SET 
                                     in_stock = '$new_stock' 
                                 WHERE 
                                     donation_items_id = '$donation_items_id'";
-                            $result2 = mysqli_query($con, $query2);
+                                $result2 = mysqli_query($con, $query2);
 
-                            if ($result2) {
-                                $item_to_deduct = 0;
+                                if ($result2) {
+                                    $item_to_deduct = 0;
+                                } else {
+                                    return error422('Error updating stock');
+                                }
                             } else {
-                                return error422('Error updating stock');
-                            }
-                        } else {
-                            $item_to_deduct = $item_to_deduct - $in_stock;
-                            $query3 = "UPDATE donation_items_tbl SET in_stock = 0 WHERE donation_items_id = '$donation_items_id'";
-                            $result3 = mysqli_query($con, $query3);
+                                $item_to_deduct = $item_to_deduct - $in_stock;
+                                $query3 = "UPDATE donation_items_tbl SET in_stock = 0 WHERE donation_items_id = '$donation_items_id'";
+                                $result3 = mysqli_query($con, $query3);
 
-                            if (!$result3) {
-                                return error422('Error updating stock');
+                                if (!$result3) {
+                                    return error422('Error updating stock');
+                                }
                             }
                         }
                     }
                 }
-
-                $data = [
-                    'status' => 200,
-                    'message' => 'Stock Deducted Successfully',
-                ];
-                header("HTTP/1.0 200 OK");
-                return json_encode($data);
             }
         }
+
+        $data = [
+            'status' => 200,
+            'message' => 'Stock Deducted Successfully',
+        ];
+        header("HTTP/1.0 200 OK");
+        return json_encode($data);
     }
 }
 

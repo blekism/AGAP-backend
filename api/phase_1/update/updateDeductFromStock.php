@@ -19,9 +19,9 @@ if ($requestMethod == 'PUT') {
     $inputData = json_decode(file_get_contents("php://input"), true);
 
     if (empty($inputData)) {
-        $deductFromStock = deductFromStock($_POST, $_GET);
+        $deductFromStock = deductFromStock($_POST);
     } else {
-        $deductFromStock = deductFromStock($inputData, $_GET);
+        $deductFromStock = deductFromStock($inputData);
     }
     echo $deductFromStock;
     exit();

@@ -45,8 +45,9 @@ INNER JOIN account_tbl AS donor_account ON donation_tbl.account_id = donor_accou
 INNER JOIN account_tbl AS reciever_account ON donation_tbl.received_by = reciever_account.account_id
 INNER JOIN donation_status_tbl ON donation_tbl.status_id = donation_status_tbl.status_id
 INNER JOIN recipient_category_tbl ON donation_tbl.recipient_id = recipient_category_tbl.recipient_category_id
-
 all donations listsed
+(DI PA TO NAGAGAWA)
+
 
 
 
