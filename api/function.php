@@ -2057,14 +2057,14 @@ function insertDeptCategory($deptCategoryInput)
 function getDonation($donationParams)
 {
 
-    global $conn;
+    global $con;
 
     if ($donationParams['donation_id'] == null) {
 
         return error422('Enter Donation id');
     }
 
-    $donation_id = mysqli_real_escape_string($conn, $donationParams['donation_id']);
+    $donation_id = mysqli_real_escape_string($con, $donationParams['donation_id']);
 
     $query = "SELECT 
         donation_tbl.donation_id,
@@ -2079,7 +2079,7 @@ function getDonation($donationParams)
     INNER JOIN event_tbl ON donation_tbl.event_id = event_tbl.evenet_id
     WHERE donation_tbl.donation_id='$donation_id' LIMIT 1;";
 
-    $result = mysqli_query($conn, $query);
+    $result = mysqli_query($con, $query);
 
     if ($result) {
 
@@ -2121,7 +2121,7 @@ function getDonation($donationParams)
 function getDonationItemsList()
 {
 
-    global $conn;
+    global $con;
 
     $query = "SELECT 
         donation_items_tbl.item,
@@ -2133,7 +2133,7 @@ function getDonationItemsList()
     donation_items_tbl
     INNER JOIN item_category_tbl ON item_category_tbl.item_category_id = donation_items_tbl.item_category_id;";
 
-    $query_run = mysqli_query($conn, $query);
+    $query_run = mysqli_query($con, $query);
 
     if ($query_run) {
 
@@ -2170,14 +2170,14 @@ function getDonationItemsList()
 function getDonationItem($donationItemsParams)
 {
 
-    global $conn;
+    global $con;
 
     if ($donationItemsParams['donation_items_id'] == null) {
 
         return error422('Enter Donation id');
     }
 
-    $donation_items_id = mysqli_real_escape_string($conn, $donationItemsParams['donation_items_id']);
+    $donation_items_id = mysqli_real_escape_string($con, $donationItemsParams['donation_items_id']);
 
     $query = "SELECT 
         donation_items_tbl.item,
@@ -2190,7 +2190,7 @@ function getDonationItem($donationItemsParams)
     INNER JOIN item_category_tbl ON item_category_tbl.item_category_id = donation_items_tbl.item_category_id
     WHERE donation_items_tbl.donation_items_id='$donation_items_id' LIMIT 1;";
 
-    $result = mysqli_query($conn, $query);
+    $result = mysqli_query($con, $query);
 
     if ($result) {
 
@@ -2232,7 +2232,7 @@ function getDonationItem($donationItemsParams)
 function getDonorList()
 {
 
-    global $conn;
+    global $con;
 
     $query = "SELECT 
         account_tbl.account_id, 
@@ -2247,9 +2247,9 @@ function getDonorList()
     FROM
     account_tbl
     INNER JOIN dept_category_tbl ON account_tbl.dept_category_id = dept_category_tbl.dept_category_id 
-    INNER JOIN designation_category_tbl ON account_tbl.designation_id = designation_category_tbl.designation_id WHERE account_tbl.account_id LIKE 'DONOR - %';";
+    INNER JOIN designation_category_tbl ON account_tbl.designation_id = designation_category_tbl.designation_id WHERE account_tbl.account_id LIKE 'USER - %';";
 
-    $query_run = mysqli_query($conn, $query);
+    $query_run = mysqli_query($con, $query);
 
     if ($query_run) {
 
@@ -2286,14 +2286,14 @@ function getDonorList()
 function getDonor($donorAccParams)
 {
 
-    global $conn;
+    global $con;
 
     if ($donorAccParams['account_id'] == null) {
 
         return error422('Enter account id');
     }
 
-    $account_id = mysqli_real_escape_string($conn, $donorAccParams['account_id']);
+    $account_id = mysqli_real_escape_string($con, $donorAccParams['account_id']);
 
     $query = "SELECT 
         account_tbl.account_id, 
@@ -2309,7 +2309,7 @@ function getDonor($donorAccParams)
     account_tbl
     INNER JOIN dept_category_tbl ON account_tbl.dept_category_id = dept_category_tbl.dept_category_id 
     INNER JOIN designation_category_tbl ON account_tbl.designation_id = designation_category_tbl.designation_id WHERE account_tbl.account_id LIKE 'DONOR - %' AND account_tbl.account_id = '$account_id' LIMIT 1;";
-    $result = mysqli_query($conn, $query);
+    $result = mysqli_query($con, $query);
 
     if ($result) {
 
@@ -2347,7 +2347,7 @@ function getDonor($donorAccParams)
 function updateDonorAcc($donorAccInput, $donorAccParams)
 {
 
-    global $conn;
+    global $con;
 
     if (!isset($donorAccParams['account_id'])) {
 
@@ -2357,14 +2357,14 @@ function updateDonorAcc($donorAccInput, $donorAccParams)
         return error422('Enter the account id');
     }
 
-    $account_id = mysqli_real_escape_string($conn, $donorAccParams['account_id']);
-    $last_name = mysqli_real_escape_string($conn, $donorAccInput['last_name']);
-    $first_name = mysqli_real_escape_string($conn, $donorAccInput['first_name']);
-    $middle_name = mysqli_real_escape_string($conn, $donorAccInput['middle_name']);
-    $dept_category_id = mysqli_real_escape_string($conn, $donorAccInput['dept_category_id']);
-    $designation_id = mysqli_real_escape_string($conn, $donorAccInput['designation_id']);
-    $email = mysqli_real_escape_string($conn, $donorAccInput['email']);
-    $contact_info = mysqli_real_escape_string($conn, $donorAccInput['contact_info']);
+    $account_id = mysqli_real_escape_string($con, $donorAccParams['account_id']);
+    $last_name = mysqli_real_escape_string($con, $donorAccInput['last_name']);
+    $first_name = mysqli_real_escape_string($con, $donorAccInput['first_name']);
+    $middle_name = mysqli_real_escape_string($con, $donorAccInput['middle_name']);
+    $dept_category_id = mysqli_real_escape_string($con, $donorAccInput['dept_category_id']);
+    $designation_id = mysqli_real_escape_string($con, $donorAccInput['designation_id']);
+    $email = mysqli_real_escape_string($con, $donorAccInput['email']);
+    $contact_info = mysqli_real_escape_string($con, $donorAccInput['contact_info']);
 
     if (empty(trim($last_name))) {
 
@@ -2392,7 +2392,7 @@ function updateDonorAcc($donorAccInput, $donorAccParams)
         $query = "UPDATE account_tbl SET last_name='$last_name', first_name='$first_name',  middle_name='$middle_name', 
         dept_category_id='$dept_category_id', designation_id='$designation_id', email='$email', contact_info='$contact_info' 
         WHERE account_tbl.account_id LIKE 'DONOR - %' AND account_tbl.account_id = '$account_id' LIMIT 1";
-        $result = mysqli_query($conn, $query);
+        $result = mysqli_query($con, $query);
 
         if ($result) {
 
@@ -2418,7 +2418,7 @@ function updateDonorAcc($donorAccInput, $donorAccParams)
 function deleteDonorAcc($donorAccParams)
 {
 
-    global $conn;
+    global $con;
 
     if (!isset($donorAccParams['account_id'])) {
 
@@ -2428,11 +2428,11 @@ function deleteDonorAcc($donorAccParams)
         return error422('Enter the Account id');
     }
 
-    $account_id = mysqli_real_escape_string($conn, $donorAccParams['account_id']);
+    $account_id = mysqli_real_escape_string($con, $donorAccParams['account_id']);
 
     $query = "DELETE FROM account_tbl WHERE account_id LIKE 'DONOR - %' AND account_id='$account_id' LIMIT 1";
 
-    $result = mysqli_query($conn, $query);
+    $result = mysqli_query($con, $query);
 
     if ($result) {
 
@@ -2462,10 +2462,10 @@ function deleteDonorAcc($donorAccParams)
 function getEventList()
 {
 
-    global $conn;
+    global $con;
 
     $query = "SELECT * FROM event_tbl";
-    $query_run = mysqli_query($conn, $query);
+    $query_run = mysqli_query($con, $query);
 
     if ($query_run) {
 
@@ -2502,17 +2502,17 @@ function getEventList()
 function getEvent($eventParams)
 {
 
-    global $conn;
+    global $con;
 
     if ($eventParams['evenet_id'] == null) {
 
         return error422('Enter Event id');
     }
 
-    $evenet_id = mysqli_real_escape_string($conn, $eventParams['evenet_id']);
+    $evenet_id = mysqli_real_escape_string($con, $eventParams['evenet_id']);
 
     $query = "SELECT * FROM event_tbl WHERE evenet_id='$evenet_id' LIMIT 1";
-    $result = mysqli_query($conn, $query);
+    $result = mysqli_query($con, $query);
 
     if ($result) {
 
@@ -2553,7 +2553,7 @@ function getEvent($eventParams)
 function updateEvent($eventInput, $eventParams)
 {
 
-    global $conn;
+    global $con;
 
     if (!isset($eventParams['evenet_id'])) {
 
@@ -2563,13 +2563,13 @@ function updateEvent($eventInput, $eventParams)
         return error422('Enter the Event id');
     }
 
-    $event_id = mysqli_real_escape_string($conn, $eventParams['evenet_id']);
-    $event_name = mysqli_real_escape_string($conn, $eventInput['event_name']);
-    $event_link = mysqli_real_escape_string($conn, $eventInput['event_link']);
-    $description = mysqli_real_escape_string($conn, $eventInput['description']);
-    $start_date = mysqli_real_escape_string($conn, $eventInput['start_date']);
-    $end_date = mysqli_real_escape_string($conn, $eventInput['end_date']);
-    $contribution_amount = mysqli_real_escape_string($conn, $eventInput['contrib_amount']);
+    $event_id = mysqli_real_escape_string($con, $eventParams['evenet_id']);
+    $event_name = mysqli_real_escape_string($con, $eventInput['event_name']);
+    $event_link = mysqli_real_escape_string($con, $eventInput['event_link']);
+    $description = mysqli_real_escape_string($con, $eventInput['description']);
+    $start_date = mysqli_real_escape_string($con, $eventInput['start_date']);
+    $end_date = mysqli_real_escape_string($con, $eventInput['end_date']);
+    $contribution_amount = mysqli_real_escape_string($con, $eventInput['contrib_amount']);
 
     if (empty(trim($event_name))) {
 
@@ -2594,7 +2594,7 @@ function updateEvent($eventInput, $eventParams)
         $query = "UPDATE event_tbl SET event_name='$event_name', event_link='$event_link',  
         description='$description', start_date='$start_date', end_date='$end_date', contrib_amount='$contribution_amount' 
         WHERE evenet_id ='$event_id' LIMIT 1";
-        $result = mysqli_query($conn, $query);
+        $result = mysqli_query($con, $query);
 
         if ($result) {
 
@@ -2626,9 +2626,9 @@ function updateEvent($eventInput, $eventParams)
 function insertItemCategory($itemCategoryInput)
 {
 
-    global $conn;
+    global $con;
 
-    $category_name = mysqli_real_escape_string($conn, $itemCategoryInput['category_name']);
+    $category_name = mysqli_real_escape_string($con, $itemCategoryInput['category_name']);
 
     if (empty(trim($category_name))) {
 
@@ -2636,7 +2636,7 @@ function insertItemCategory($itemCategoryInput)
     } else {
 
         $query = "INSERT INTO item_category_tbl (category_name) VALUES ('$category_name')";
-        $result = mysqli_query($conn, $query);
+        $result = mysqli_query($con, $query);
 
         if ($result) {
 
@@ -2666,10 +2666,10 @@ function insertItemCategory($itemCategoryInput)
 function getPartnerList()
 {
 
-    global $conn;
+    global $con;
 
     $query = "SELECT * FROM partners_tbl";
-    $query_run = mysqli_query($conn, $query);
+    $query_run = mysqli_query($con, $query);
 
     if ($query_run) {
 
@@ -2706,17 +2706,17 @@ function getPartnerList()
 function getPartner($partnerParams)
 {
 
-    global $conn;
+    global $con;
 
     if ($partnerParams['partner_id'] == null) {
 
         return error422('Enter Partner id');
     }
 
-    $partner_id = mysqli_real_escape_string($conn, $partnerParams['partner_id']);
+    $partner_id = mysqli_real_escape_string($con, $partnerParams['partner_id']);
 
     $query = "SELECT * FROM partners_tbl WHERE partner_id='$partner_id' LIMIT 1";
-    $result = mysqli_query($conn, $query);
+    $result = mysqli_query($con, $query);
 
     if ($result) {
 
@@ -2754,10 +2754,10 @@ function getPartner($partnerParams)
 function insertPartner($partnerInput)
 {
 
-    global $conn;
+    global $con;
 
     $partner_id = 'PARTNER' . date('Y') . ' - ' . uniqid();
-    $partner_name = mysqli_real_escape_string($conn, $partnerInput['partner_name']);
+    $partner_name = mysqli_real_escape_string($con, $partnerInput['partner_name']);
 
     if (empty(trim($partner_name))) {
 
@@ -2765,7 +2765,7 @@ function insertPartner($partnerInput)
     } else {
 
         $query = "INSERT INTO partners_tbl (partner_id, partner_name) VALUES ('$partner_id','$partner_name')";
-        $result = mysqli_query($conn, $query);
+        $result = mysqli_query($con, $query);
 
         if ($result) {
 
@@ -2791,7 +2791,7 @@ function insertPartner($partnerInput)
 function updatePartner($partnerInput, $partnerParams)
 {
 
-    global $conn;
+    global $con;
 
     if (!isset($partnerParams['partner_id'])) {
 
@@ -2801,8 +2801,8 @@ function updatePartner($partnerInput, $partnerParams)
         return error422('Enter the Partner id');
     }
 
-    $partner_id = mysqli_real_escape_string($conn, $partnerParams['partner_id']);
-    $partner_name = mysqli_real_escape_string($conn, $partnerInput['partner_name']);
+    $partner_id = mysqli_real_escape_string($con, $partnerParams['partner_id']);
+    $partner_name = mysqli_real_escape_string($con, $partnerInput['partner_name']);
 
     if (empty(trim($partner_name))) {
 
@@ -2810,7 +2810,7 @@ function updatePartner($partnerInput, $partnerParams)
     } else {
 
         $query = "UPDATE partners_tbl SET partner_name='$partner_name' WHERE partner_id ='$partner_id' LIMIT 1";
-        $result = mysqli_query($conn, $query);
+        $result = mysqli_query($con, $query);
 
         if ($result) {
 
@@ -2836,7 +2836,7 @@ function updatePartner($partnerInput, $partnerParams)
 function deletePartner($partnerParams)
 {
 
-    global $conn;
+    global $con;
 
     if (!isset($partnerParams['partner_id'])) {
 
@@ -2846,10 +2846,10 @@ function deletePartner($partnerParams)
         return error422('Enter the Partner id');
     }
 
-    $partner_id = mysqli_real_escape_string($conn, $partnerParams['partner_id']);
+    $partner_id = mysqli_real_escape_string($con, $partnerParams['partner_id']);
 
     $query = "DELETE FROM partners_tbl WHERE partner_id='$partner_id' LIMIT 1";
-    $result = mysqli_query($conn, $query);
+    $result = mysqli_query($con, $query);
 
     if ($result) {
 
@@ -2878,7 +2878,7 @@ function deletePartner($partnerParams)
 function getPhase2List()
 {
 
-    global $conn;
+    global $con;
 
     $query = "SELECT 
         phase2_tbl.log_id, 
@@ -2895,7 +2895,7 @@ function getPhase2List()
     INNER JOIN event_tbl ON phase2_tbl.event_id = event_tbl.evenet_id
     INNER JOIN account_tbl ON phase2_tbl.account_id = account_tbl.account_id;";
 
-    $query_run = mysqli_query($conn, $query);
+    $query_run = mysqli_query($con, $query);
 
     if ($query_run) {
 
@@ -2932,14 +2932,14 @@ function getPhase2List()
 function getPhase2($phase2Params)
 {
 
-    global $conn;
+    global $con;
 
     if ($phase2Params['log_id'] == null) {
 
         return error422('Enter log id');
     }
 
-    $log_id = mysqli_real_escape_string($conn, $phase2Params['log_id']);
+    $log_id = mysqli_real_escape_string($con, $phase2Params['log_id']);
 
     $query = "SELECT 
         phase2_tbl.log_id, 
@@ -2957,7 +2957,7 @@ function getPhase2($phase2Params)
     INNER JOIN account_tbl ON phase2_tbl.account_id = account_tbl.account_id
     WHERE phase2_tbl.log_id='$log_id' LIMIT 1;";
 
-    $result = mysqli_query($conn, $query);
+    $result = mysqli_query($con, $query);
 
     if ($result) {
 
@@ -2995,7 +2995,7 @@ function getPhase2($phase2Params)
 function updatePhase2($phase2Input, $phase2Params)
 {
 
-    global $conn;
+    global $con;
 
     if (!isset($phase2Params['log_id'])) {
 
@@ -3005,12 +3005,12 @@ function updatePhase2($phase2Input, $phase2Params)
         return error422('Enter the Phase 2 Log id');
     }
 
-    $log_id = mysqli_real_escape_string($conn, $phase2Params['log_id']);
-    $activity = mysqli_real_escape_string($conn, $phase2Input['activity']);
-    $time_in = mysqli_real_escape_string($conn, $phase2Input['time_in']);
-    $time_out = mysqli_real_escape_string($conn, $phase2Input['time_out']);
-    $signature = mysqli_real_escape_string($conn, $phase2Input['signature']);
-    $date = mysqli_real_escape_string($conn, $phase2Input['date']);
+    $log_id = mysqli_real_escape_string($con, $phase2Params['log_id']);
+    $activity = mysqli_real_escape_string($con, $phase2Input['activity']);
+    $time_in = mysqli_real_escape_string($con, $phase2Input['time_in']);
+    $time_out = mysqli_real_escape_string($con, $phase2Input['time_out']);
+    $signature = mysqli_real_escape_string($con, $phase2Input['signature']);
+    $date = mysqli_real_escape_string($con, $phase2Input['date']);
 
     if (empty(trim($activity))) {
 
@@ -3033,7 +3033,7 @@ function updatePhase2($phase2Input, $phase2Params)
         time_out='$time_out', signature='$signature', date='$date'
         WHERE log_id ='$log_id' LIMIT 1";
 
-        $result = mysqli_query($conn, $query);
+        $result = mysqli_query($con, $query);
 
         if ($result) {
 
@@ -3063,7 +3063,7 @@ function updatePhase2($phase2Input, $phase2Params)
 function getPhase3List()
 {
 
-    global $conn;
+    global $con;
 
     $query = "SELECT 
         phase3_tbl.log_id, 
@@ -3079,7 +3079,7 @@ function getPhase3List()
     INNER JOIN event_tbl ON phase3_tbl.event_id = event_tbl.evenet_id
     INNER JOIN account_tbl ON phase3_tbl.account_id = account_tbl.account_id;";
 
-    $query_run = mysqli_query($conn, $query);
+    $query_run = mysqli_query($con, $query);
 
     if ($query_run) {
 
@@ -3116,14 +3116,14 @@ function getPhase3List()
 function getPhase3($phase3Params)
 {
 
-    global $conn;
+    global $con;
 
     if ($phase3Params['log_id'] == null) {
 
         return error422('Enter log id');
     }
 
-    $log_id = mysqli_real_escape_string($conn, $phase3Params['log_id']);
+    $log_id = mysqli_real_escape_string($con, $phase3Params['log_id']);
 
     $query = "SELECT 
         phase3_tbl.log_id, 
@@ -3140,7 +3140,7 @@ function getPhase3($phase3Params)
     INNER JOIN account_tbl ON phase3_tbl.account_id = account_tbl.account_id
     WHERE phase3_tbl.log_id='$log_id' LIMIT 1;";
 
-    $result = mysqli_query($conn, $query);
+    $result = mysqli_query($con, $query);
 
     if ($result) {
 
@@ -3178,7 +3178,7 @@ function getPhase3($phase3Params)
 function updatePhase3($phase3Input, $phase3Params)
 {
 
-    global $conn;
+    global $con;
 
     if (!isset($phase3Params['log_id'])) {
 
@@ -3188,11 +3188,11 @@ function updatePhase3($phase3Input, $phase3Params)
         return error422('Enter the Phase 3 Log id');
     }
 
-    $log_id = mysqli_real_escape_string($conn, $phase3Params['log_id']);
-    $time_in = mysqli_real_escape_string($conn, $phase3Input['time_in']);
-    $time_out = mysqli_real_escape_string($conn, $phase3Input['time_out']);
-    $signature = mysqli_real_escape_string($conn, $phase3Input['signature']);
-    $date = mysqli_real_escape_string($conn, $phase3Input['date']);
+    $log_id = mysqli_real_escape_string($con, $phase3Params['log_id']);
+    $time_in = mysqli_real_escape_string($con, $phase3Input['time_in']);
+    $time_out = mysqli_real_escape_string($con, $phase3Input['time_out']);
+    $signature = mysqli_real_escape_string($con, $phase3Input['signature']);
+    $date = mysqli_real_escape_string($con, $phase3Input['date']);
 
     if (empty(trim($time_in))) {
 
@@ -3212,7 +3212,7 @@ function updatePhase3($phase3Input, $phase3Params)
         time_out='$time_out', signature='$signature', date='$date'
         WHERE log_id ='$log_id' LIMIT 1";
 
-        $result = mysqli_query($conn, $query);
+        $result = mysqli_query($con, $query);
 
         if ($result) {
 
@@ -3242,7 +3242,7 @@ function updatePhase3($phase3Input, $phase3Params)
 function getVolunteerList()
 {
 
-    global $conn;
+    global $con;
 
     $query = "SELECT 
         account_tbl.account_id, 
@@ -3261,7 +3261,7 @@ function getVolunteerList()
     INNER JOIN designation_category_tbl ON account_tbl.designation_id = designation_category_tbl.designation_id
     WHERE account_tbl.account_id LIKE 'VOLUN - %';";
 
-    $query_run = mysqli_query($conn, $query);
+    $query_run = mysqli_query($con, $query);
 
     if ($query_run) {
 
@@ -3298,14 +3298,14 @@ function getVolunteerList()
 function getVolunteer($volunteerAccParams)
 {
 
-    global $conn;
+    global $con;
 
     if ($volunteerAccParams['account_id'] == null) {
 
         return error422('Enter account id');
     }
 
-    $account_id = mysqli_real_escape_string($conn, $volunteerAccParams['account_id']);
+    $account_id = mysqli_real_escape_string($con, $volunteerAccParams['account_id']);
 
     $query = "SELECT 
         account_tbl.account_id, 
@@ -3323,7 +3323,7 @@ function getVolunteer($volunteerAccParams)
     INNER JOIN dept_category_tbl ON account_tbl.dept_category_id = dept_category_tbl.dept_category_id
     INNER JOIN designation_category_tbl ON account_tbl.designation_id = designation_category_tbl.designation_id 
     WHERE account_tbl.account_id LIKE 'VOLUN - %' AND account_tbl.account_id = '$account_id' LIMIT 1;";
-    $result = mysqli_query($conn, $query);
+    $result = mysqli_query($con, $query);
 
     if ($result) {
 
@@ -3361,7 +3361,7 @@ function getVolunteer($volunteerAccParams)
 function updateVolunteerAcc($volunteerAccInput, $volunteerAccParams)
 {
 
-    global $conn;
+    global $con;
 
     if (!isset($volunteerAccParams['account_id'])) {
 
@@ -3371,16 +3371,16 @@ function updateVolunteerAcc($volunteerAccInput, $volunteerAccParams)
         return error422('Enter the account id');
     }
 
-    $account_id = mysqli_real_escape_string($conn, $volunteerAccParams['account_id']);
-    $last_name = mysqli_real_escape_string($conn, $volunteerAccInput['last_name']);
-    $first_name = mysqli_real_escape_string($conn, $volunteerAccInput['first_name']);
-    $middle_name = mysqli_real_escape_string($conn, $volunteerAccInput['middle_name']);
-    $section = mysqli_real_escape_string($conn, $volunteerAccInput['section']);
-    $dept_category_id = mysqli_real_escape_string($conn, $volunteerAccInput['dept_category_id']);
-    $designation_id = mysqli_real_escape_string($conn, $volunteerAccInput['designation_id']);
-    $email = mysqli_real_escape_string($conn, $volunteerAccInput['email']);
-    $contact_info = mysqli_real_escape_string($conn, $volunteerAccInput['contact_info']);
-    $total_hours = mysqli_real_escape_string($conn, $volunteerAccInput['total_hours']);
+    $account_id = mysqli_real_escape_string($con, $volunteerAccParams['account_id']);
+    $last_name = mysqli_real_escape_string($con, $volunteerAccInput['last_name']);
+    $first_name = mysqli_real_escape_string($con, $volunteerAccInput['first_name']);
+    $middle_name = mysqli_real_escape_string($con, $volunteerAccInput['middle_name']);
+    $section = mysqli_real_escape_string($con, $volunteerAccInput['section']);
+    $dept_category_id = mysqli_real_escape_string($con, $volunteerAccInput['dept_category_id']);
+    $designation_id = mysqli_real_escape_string($con, $volunteerAccInput['designation_id']);
+    $email = mysqli_real_escape_string($con, $volunteerAccInput['email']);
+    $contact_info = mysqli_real_escape_string($con, $volunteerAccInput['contact_info']);
+    $total_hours = mysqli_real_escape_string($con, $volunteerAccInput['total_hours']);
 
     if (empty(trim($last_name))) {
 
@@ -3415,7 +3415,7 @@ function updateVolunteerAcc($volunteerAccInput, $volunteerAccParams)
         email='$email', contact_info='$contact_info', total_hours='$total_hours', 
         dept_category_id='$dept_category_id', section='$section', designation_id='$designation_id' 
         WHERE account_tbl.account_id LIKE 'VOLUN - %' AND account_tbl.account_id = '$account_id' LIMIT 1";
-        $result = mysqli_query($conn, $query);
+        $result = mysqli_query($con, $query);
 
         if ($result) {
 
@@ -3441,7 +3441,7 @@ function updateVolunteerAcc($volunteerAccInput, $volunteerAccParams)
 function deleteVolunteerAcc($volunteerAccParams)
 {
 
-    global $conn;
+    global $con;
 
     if (!isset($volunteerAccParams['account_id'])) {
 
@@ -3451,11 +3451,11 @@ function deleteVolunteerAcc($volunteerAccParams)
         return error422('Enter the Account id');
     }
 
-    $account_id = mysqli_real_escape_string($conn, $volunteerAccParams['account_id']);
+    $account_id = mysqli_real_escape_string($con, $volunteerAccParams['account_id']);
 
     $query = "DELETE FROM account_tbl WHERE account_id LIKE 'VOLUN - %' AND account_id='$account_id' LIMIT 1";
 
-    $result = mysqli_query($conn, $query);
+    $result = mysqli_query($con, $query);
 
     if ($result) {
 
