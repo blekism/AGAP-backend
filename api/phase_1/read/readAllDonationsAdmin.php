@@ -17,9 +17,9 @@ if ($requestMethod == "OPTIONS") {
 
 if ($requestMethod == 'GET') {
 
-    $readPartner = readPartners();
+    $readAllDonations = readAllDonations();
 
-    echo $readPartner;
+    echo $readAllDonations;
     exit();
 } else {
     $data = [
