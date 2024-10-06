@@ -118,6 +118,7 @@ function deductFromStock($userInput)
                                     donation_items_tbl 
                                 SET 
                                     in_stock = '$new_stock' 
+                                    status_id = 3001
                                 WHERE 
                                     donation_items_id = '$donation_items_id'";
                                 $result2 = mysqli_query($con, $query2);
@@ -164,7 +165,7 @@ function readAllDonations()
         donation_tbl.received_date
         FROM donation_tbl
         INNER JOIN account_tbl AS donor_account ON donation_tbl.account_id = donor_account.account_id
-        INNER JOIN account_tbl AS reciever_account ON donation_tbl.received_by = reciever_account.account_id
+        LEFT JOIN account_tbl AS reciever_account ON donation_tbl.received_by = reciever_account.account_id
         INNER JOIN donation_status_tbl ON donation_tbl.status_id = donation_status_tbl.status_id
         INNER JOIN recipient_category_tbl ON donation_tbl.recipient_id = recipient_category_tbl.recipient_category_id";
     $result = mysqli_query($con, $query);
@@ -486,7 +487,8 @@ function signDonor($userInput)
 
             $query = "INSERT INTO 
             account_tbl(
-                account_id, 
+                account_id,
+                is_volunteer, 
                 last_name, 
                 first_name, 
                 middle_name, 
@@ -502,6 +504,7 @@ function signDonor($userInput)
                 created_at) 
             VALUES(
                 '$account_id', 
+                'donor',
                 '$last_name',
                 '$first_name', 
                 '$middle_name',
@@ -1515,7 +1518,7 @@ function readEvents()
 {
     global $con;
 
-    $query = "SELECT event_name, event_link, description, start_date, end_date FROM event_tbl";
+    $query = "SELECT * FROM event_tbl";
     $result = mysqli_query($con, $query);
 
     if ($result) {
@@ -2245,11 +2248,13 @@ function getDonorList()
         dept_category_tbl.category_name,
         designation_category_tbl.designation_name,
         account_tbl.email,
-        account_tbl.contact_info
+        account_tbl.contact_info,
+        account_tbl.verified_at
     FROM
     account_tbl
     INNER JOIN dept_category_tbl ON account_tbl.dept_category_id = dept_category_tbl.dept_category_id 
-    INNER JOIN designation_category_tbl ON account_tbl.designation_id = designation_category_tbl.designation_id;";
+    INNER JOIN designation_category_tbl ON account_tbl.designation_id = designation_category_tbl.designation_id
+    WHERE account_tbl.is_volunteer = 'donor';";
 
     $query_run = mysqli_query($con, $query);
 
@@ -3261,7 +3266,7 @@ function getVolunteerList()
     account_tbl
     INNER JOIN dept_category_tbl ON account_tbl.dept_category_id = dept_category_tbl.dept_category_id
     INNER JOIN designation_category_tbl ON account_tbl.designation_id = designation_category_tbl.designation_id
-    WHERE account_tbl.account_id LIKE 'VOLUN - %';";
+    WHERE account_tbl.is_volunteer = 'volunteer';";
 
     $query_run = mysqli_query($con, $query);
 
@@ -3358,6 +3363,62 @@ function getVolunteer($volunteerAccParams)
         return json_encode($data);
     }
 }
+
+function getApplicantVolunteerList()
+{
+
+    global $con;
+
+    $query = "SELECT 
+        account_tbl.account_id, 
+        account_tbl.last_name,
+        account_tbl.first_name,
+        account_tbl.middle_name,
+        account_tbl.section,
+        dept_category_tbl.category_name,
+        designation_category_tbl.designation_name,
+        account_tbl.email,
+        account_tbl.contact_info,
+        account_tbl.total_hours
+    FROM
+    account_tbl
+    INNER JOIN dept_category_tbl ON account_tbl.dept_category_id = dept_category_tbl.dept_category_id
+    INNER JOIN designation_category_tbl ON account_tbl.designation_id = designation_category_tbl.designation_id
+    WHERE account_tbl.is_volunteer = 'volunteer_apply';";
+
+    $query_run = mysqli_query($con, $query);
+
+    if ($query_run) {
+
+        if (mysqli_num_rows($query_run) > 0) {
+
+            $res = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
+
+            $data = [
+                'status' => 200,
+                'message' => 'Volunteer List Fetched Successfully',
+                'data' => $res
+            ];
+            header("HTTP/1.0 200 OK");
+            return json_encode($data);
+        } else {
+            $data = [
+                'status' => 404,
+                'message' => 'No Volunteer Found',
+            ];
+            header("HTTP/1.0 404 No Volunteer Found");
+            return json_encode($data);
+        }
+    } else {
+        $data = [
+            'status' => 500,
+            'message' => 'Internal Server Error',
+        ];
+        header("HTTP/1.0 500 Internal Server Error");
+        return json_encode($data);
+    }
+}
+
 /*--SINGLE READ Volunteer Ends Here--*/
 /*--UPDATE volunteer_acc Starts Here--*/
 function updateVolunteerAcc($volunteerAccInput, $volunteerAccParams)
