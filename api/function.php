@@ -1700,11 +1700,11 @@ function updateDonationAccept($userParams, $account_id)
 function loginAdminAcc($adminAccInput)
 {
 
-    global $conn;
+    global $con;
 
     if (isset($adminAccInput['email']) && isset($adminAccInput['password'])) {
-        $email = mysqli_real_escape_string($conn, $adminAccInput['email']);
-        $password = mysqli_real_escape_string($conn, $adminAccInput['password']);
+        $email = mysqli_real_escape_string($con, $adminAccInput['email']);
+        $password = mysqli_real_escape_string($con, $adminAccInput['password']);
 
         $hashing = md5($password);
 
@@ -1721,7 +1721,7 @@ function loginAdminAcc($adminAccInput)
                 WHERE 
                     email = '$email' AND 
                     password = '$hashing';";
-            $result = mysqli_query($conn, $query);
+            $result = mysqli_query($con, $query);
 
             if ($result) {
                 if (mysqli_num_rows($result) == 1) {
@@ -1736,7 +1736,7 @@ function loginAdminAcc($adminAccInput)
                         // Store session token in the database for the user
                         $admin_id = $res['admin_id'];
                         $update_token_query = "UPDATE admin_acc_tbl SET session_token='$session_token', session_expire = '$expire' WHERE admin_id='$admin_id'";
-                        mysqli_query($conn, $update_token_query);
+                        mysqli_query($con, $update_token_query);
 
                         // Set the session token as an HTTP-only, secure cookie
                         setcookie('admin_session_token', $session_token, [
@@ -1791,16 +1791,16 @@ function loginAdminAcc($adminAccInput)
 function insertAdminAcc($adminAccInput)
 {
 
-    global $conn;
+    global $con;
 
     if (isset($adminAccInput['email']) && isset($adminAccInput['password'])) {
         $admin_id = 'ADMIN' . date('Y') . ' - ' . uniqid();
-        $last_name = mysqli_real_escape_string($conn, $adminAccInput['last_name']);
-        $first_name = mysqli_real_escape_string($conn, $adminAccInput['first_name']);
-        $middle_name = mysqli_real_escape_string($conn, $adminAccInput['middle_name']);
-        $email = mysqli_real_escape_string($conn, $adminAccInput['email']);
-        $password = mysqli_real_escape_string($conn, $adminAccInput['password']);
-        $contact_info = mysqli_real_escape_string($conn, $adminAccInput['contact_info']);
+        $last_name = mysqli_real_escape_string($con, $adminAccInput['last_name']);
+        $first_name = mysqli_real_escape_string($con, $adminAccInput['first_name']);
+        $middle_name = mysqli_real_escape_string($con, $adminAccInput['middle_name']);
+        $email = mysqli_real_escape_string($con, $adminAccInput['email']);
+        $password = mysqli_real_escape_string($con, $adminAccInput['password']);
+        $contact_info = mysqli_real_escape_string($con, $adminAccInput['contact_info']);
 
         $hashing = md5($password);
 
@@ -1826,7 +1826,7 @@ function insertAdminAcc($adminAccInput)
 
             $query = "INSERT INTO admin_acc_tbl (admin_id, last_name, first_name, middle_name, email, password,  contact_info) 
             VALUES ('$admin_id','$last_name','$first_name','$middle_name','$email','$hashing','$contact_info')";
-            $result = mysqli_query($conn, $query);
+            $result = mysqli_query($con, $query);
 
             if ($result) {
 
@@ -1855,7 +1855,7 @@ function insertAdminAcc($adminAccInput)
 function updateAdminAcc($adminAccInput, $adminParams)
 {
 
-    global $conn;
+    global $con;
 
     if (!isset($adminParams['admin_id'])) {
 
@@ -1865,13 +1865,13 @@ function updateAdminAcc($adminAccInput, $adminParams)
         return error422('Enter the Admin id');
     }
 
-    $admin_id = mysqli_real_escape_string($conn, $adminParams['admin_id']);
-    $last_name = mysqli_real_escape_string($conn, $adminAccInput['last_name']);
-    $first_name = mysqli_real_escape_string($conn, $adminAccInput['first_name']);
-    $middle_name = mysqli_real_escape_string($conn, $adminAccInput['middle_name']);
-    $email = mysqli_real_escape_string($conn, $adminAccInput['email']);
-    $password = mysqli_real_escape_string($conn, $adminAccInput['password']);
-    $contact_info = mysqli_real_escape_string($conn, $adminAccInput['contact_info']);
+    $admin_id = mysqli_real_escape_string($con, $adminParams['admin_id']);
+    $last_name = mysqli_real_escape_string($con, $adminAccInput['last_name']);
+    $first_name = mysqli_real_escape_string($con, $adminAccInput['first_name']);
+    $middle_name = mysqli_real_escape_string($con, $adminAccInput['middle_name']);
+    $email = mysqli_real_escape_string($con, $adminAccInput['email']);
+    $password = mysqli_real_escape_string($con, $adminAccInput['password']);
+    $contact_info = mysqli_real_escape_string($con, $adminAccInput['contact_info']);
 
     if (empty(trim($last_name))) {
 
@@ -1896,7 +1896,7 @@ function updateAdminAcc($adminAccInput, $adminParams)
         $query = "UPDATE admin_acc_tbl SET last_name='$last_name', first_name='$first_name',  
         middle_name='$middle_name', email='$email', password='$password', contact_info='$contact_info' 
         WHERE admin_id ='$admin_id' LIMIT 1";
-        $result = mysqli_query($conn, $query);
+        $result = mysqli_query($con, $query);
 
         if ($result) {
 
@@ -1922,7 +1922,7 @@ function updateAdminAcc($adminAccInput, $adminParams)
 function deleteAdminAcc($adminParams)
 {
 
-    global $conn;
+    global $con;
 
     if (!isset($adminParams['admin_id'])) {
 
@@ -1932,10 +1932,10 @@ function deleteAdminAcc($adminParams)
         return error422('Enter the Admin id');
     }
 
-    $admin_id = mysqli_real_escape_string($conn, $adminParams['admin_id']);
+    $admin_id = mysqli_real_escape_string($con, $adminParams['admin_id']);
 
     $query = "DELETE FROM admin_acc_tbl WHERE admin_id='$admin_id' LIMIT 1";
-    $result = mysqli_query($conn, $query);
+    $result = mysqli_query($con, $query);
 
     if ($result) {
 
@@ -1964,9 +1964,9 @@ function deleteAdminAcc($adminParams)
 function insertDeptCategory($deptCategoryInput)
 {
 
-    global $conn;
+    global $con;
 
-    $category_name = mysqli_real_escape_string($conn, $deptCategoryInput['category_name']);
+    $category_name = mysqli_real_escape_string($con, $deptCategoryInput['category_name']);
 
     if (empty(trim($category_name))) {
 
@@ -1974,7 +1974,7 @@ function insertDeptCategory($deptCategoryInput)
     } else {
 
         $query = "INSERT INTO dept_category_tbl (category_name) VALUES ('$category_name')";
-        $result = mysqli_query($conn, $query);
+        $result = mysqli_query($con, $query);
 
         if ($result) {
 
