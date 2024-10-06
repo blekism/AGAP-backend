@@ -2,7 +2,7 @@
 
 require __DIR__ . '/../inc/dbcon.php';
 require __DIR__ . '/../vendor/autoload.php';
-require 'creds.php';
+// require 'creds.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
@@ -1282,26 +1282,28 @@ function readDonationDonor($userParams)
 // READ DONOR DONATION ON ACCOUNT END
 
 // READ DONOR DONATION ITEMS START
-function readDonationItems($userParams)
+function readDonationItems($userInput)
 {
     global $con;
 
-    if (!isset($userParams['donation_id'])) {
+    if (!isset($userInput['donation_id'])) {
         return error422('Donation ID not found in URL');
-    } elseif ($userParams['donation_id'] == null) {
+    } elseif ($userInput['donation_id'] == null) {
         return error422('Donation ID is null');
     } else {
-        $donation_id = mysqli_real_escape_string($con, $userParams['donation_id']);
+        $donation_id = mysqli_real_escape_string($con, $userInput['donation_id']);
 
-        $query = "SELECT 
+        $query = "SELECT
+            donation_tbl.donation_id, 
             donation_items_tbl.item,
             item_category_tbl.category_name,
             donation_items_tbl.qty,
-            donation_items_tbl.cost,
-            donation_items_tbl.donor_signature
+            donation_items_tbl.in_stock,
+            donation_items_tbl.cost
         FROM
             donation_items_tbl
         INNER JOIN item_category_tbl ON item_category_tbl.item_category_id = donation_items_tbl.item_category_id
+        INNER JOIN donation_tbl ON donation_tbl.donation_id = donation_items_tbl.donation_id
         WHERE donation_items_tbl.donation_id = '$donation_id'";
         $result = mysqli_query($con, $query);
 
