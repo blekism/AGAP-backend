@@ -174,7 +174,7 @@ function readAllDonations()
             $res = mysqli_fetch_all($result, MYSQLI_ASSOC);
             $data = [
                 'status' => 200,
-                'message' => 'Partners Fetched Successfully ',
+                'message' => 'Donations Fetched Successfully ',
                 'data' => $res,
             ];
             header("HTTP/1.0 200 OK");
@@ -2247,7 +2247,7 @@ function getDonorList()
     FROM
     account_tbl
     INNER JOIN dept_category_tbl ON account_tbl.dept_category_id = dept_category_tbl.dept_category_id 
-    INNER JOIN designation_category_tbl ON account_tbl.designation_id = designation_category_tbl.designation_id WHERE account_tbl.account_id LIKE 'USER - %';";
+    INNER JOIN designation_category_tbl ON account_tbl.designation_id = designation_category_tbl.designation_id;";
 
     $query_run = mysqli_query($con, $query);
 
