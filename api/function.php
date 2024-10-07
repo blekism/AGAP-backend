@@ -118,7 +118,6 @@ function deductFromStock($userInput)
                                     donation_items_tbl 
                                 SET 
                                     in_stock = '$new_stock' 
-                                    status_id = 3001
                                 WHERE 
                                     donation_items_id = '$donation_items_id'";
                                 $result2 = mysqli_query($con, $query2);
