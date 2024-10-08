@@ -1,30 +1,33 @@
 <?php
 
-header ('Access-Control-Allow-Origin:*');
-header ('Content-Type: application/json');
-header ('Access-Control-Allow-Methods: GET, OPTIONS');
-header ('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Request-With');
+header('Access-Control-Allow-Origin:*');
+header('Content-Type: application/json');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Request-With');
 
-include ('../../function.php');
+include('../../function.php');
 
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
-if($requestMethod == 'OPTIONS'){
+if ($requestMethod == 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
-if($requestMethod == 'GET'){
+if ($requestMethod == 'POST') {
+    $inputData = json_decode(file_get_contents("php://input"), true);
 
-    $volunteerList = getVolunteerList();
+    if (empty($inputData)) {
+        $volunteerList = getVolunteerList($_POST);
+    } else {
+        $volunteerList = getVolunteerList($inputData);
+    }
     echo $volunteerList;
-
 } else {
     $data = [
         'status' => 405,
-        'message' => $requestMethod. 'Method Not Allowed',
+        'message' => $requestMethod . 'Method Not Allowed',
     ];
     header("HTTP/1.0 405 Method Not Allowed");
     echo json_encode($data);
 }
-?>

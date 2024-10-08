@@ -13,7 +13,6 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\ExpiredException;
 use Firebase\JWT\Key;
 
-global $con;
 
 
 $requestMethod = $_SERVER["REQUEST_METHOD"];
