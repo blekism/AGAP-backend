@@ -16,7 +16,7 @@ if ($requestMethod == 'OPTIONS') {
 
 if ($requestMethod == 'GET') {
 
-    $volunteerList = getApplicantVolunteerList();
+    // $volunteerList = getApplicantVolunteerList();
     echo $volunteerList;
 } else {
     $data = [
