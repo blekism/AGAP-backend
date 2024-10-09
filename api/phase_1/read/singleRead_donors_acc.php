@@ -1,43 +1,35 @@
 <?php
 
-header ('Access-Control-Allow-Origin:*');
-header ('Content-Type: application/json');
-header ('Access-Control-Allow-Methods: GET, OPTIONS');
-header ('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Request-With');
+header('Access-Control-Allow-Origin:*');
+header('Content-Type: application/json');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Request-With');
 
-include ('../../function.php');
+include('../../function.php');
 
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
-if($requestMethod == 'OPTIONS'){
+if ($requestMethod == 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
-if($requestMethod == 'GET'){
+if ($requestMethod == 'POST') {
 
-    if(isset($_GET['account_id'])){
+    $inputdata = json_decode(file_get_contents("php://input"), true);
 
-        $donor = getDonor($_GET);
-        echo $donor;
-
+    if (empty($inputdata)) {
+        $donor = getDonor($_POST);
     } else {
-
-        $data = [
-            'status' => 404,
-            'message' => $requestMethod. ' Method Not Allowed',
-        ];
-        header("HTTP/1.0 404 Method Not Allowed");
-        echo json_encode($data);
-
+        $donor = getDonor($inputdata);
     }
-
+    echo $donor;
+    exit();
 } else {
     $data = [
         'status' => 405,
-        'message' => $requestMethod. ' Method Not Allowed',
+        'message' => $requestMethod . ' Method Not Allowed',
     ];
     header("HTTP/1.0 405 Method Not Allowed");
     echo json_encode($data);
 }
-?>
