@@ -198,6 +198,61 @@ function readAllDonations()
     }
 }
 
+function readDonationReceivedByVolunteer($userInput)
+{
+    global $con;
+
+    $account_id = mysqli_real_escape_string($con, $userInput['account_id']);
+
+    if (empty(trim($account_id))) {
+        return error422('Enter valid account id');
+    } 
+    else {
+        $query = "SELECT 
+        donation_tbl.donation_id,
+        donor_account.last_name AS donor_lastName, 
+        donation_status_tbl.status_name,
+        recipient_category_tbl.recipient_type, 
+        reciever_account.last_name AS receiver_lastName, 
+        donation_tbl.received_date
+        FROM donation_tbl
+        INNER JOIN account_tbl AS donor_account ON donation_tbl.account_id = donor_account.account_id
+        LEFT JOIN account_tbl AS reciever_account ON donation_tbl.received_by = reciever_account.account_id
+        INNER JOIN donation_status_tbl ON donation_tbl.status_id = donation_status_tbl.status_id
+        INNER JOIN recipient_category_tbl ON donation_tbl.recipient_id = recipient_category_tbl.recipient_category_id
+        WHERE donation_tbl.received_by = '$account_id';";
+
+    $result = mysqli_query($con, $query);
+
+    if ($result) {
+        if (mysqli_num_rows($result) > 0) {
+            $res = mysqli_fetch_all($result, MYSQLI_ASSOC);
+            $data = [
+                'status' => 200,
+                'message' => 'Donations Fetched Successfully ',
+                'data' => $res,
+            ];
+            header("HTTP/1.0 200 OK");
+            return json_encode($data);
+        } else {
+            $data = [
+                'status' => 404,
+                'message' => 'No Donations Found',
+            ];
+            header("HTTP/1.0 404 Not Found");
+            return json_encode($data);
+        }
+    } else {
+        $data = [
+            'status' => 500,
+            'message' => 'Internal Server Error',
+        ];
+        header("HTTP/1.0 500 Internal Server Error");
+        return json_encode($data);
+    }
+    }
+}
+
 function readSpeicifcCategory($category_id)
 {
     global $con;
