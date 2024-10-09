@@ -2512,50 +2512,50 @@ function getEventList()
 }
 /*--READ Event List Ends Here--*/
 /*--SINGLE READ Event Starts Here--*/
-function getEvent($eventParams)
+function getEvent($eventInput)
 {
-
     global $con;
 
-    if ($eventParams['evenet_id'] == null) {
+    $event_id = mysqli_real_escape_string($con, $eventInput['event_id']);
+    
+    if (empty(trim($event_id))) {
 
         return error422('Enter Event id');
-    }
-
-    $evenet_id = mysqli_real_escape_string($con, $eventParams['evenet_id']);
-
-    $query = "SELECT * FROM event_tbl WHERE evenet_id='$evenet_id' LIMIT 1";
-    $result = mysqli_query($con, $query);
-
-    if ($result) {
-
-        if (mysqli_num_rows($result) == 1) {
-
-            $res = mysqli_fetch_assoc($result);
-
-            $data = [
-                'status' => 200,
-                'message' => 'Event Fetched Successfully',
-                'data' => $res
-            ];
-            header("HTTP/1.0 200 OK");
-            return json_encode($data);
-        } else {
-            $data = [
-                'status' => 404,
-                'message' => 'No Event Found',
-            ];
-            header("HTTP/1.0 404 Not Found");
-            return json_encode($data);
-        }
     } else {
 
-        $data = [
-            'status' => 500,
-            'message' => 'Internal Server Error',
-        ];
-        header("HTTP/1.0 500 Internal Server Error");
-        return json_encode($data);
+        $query = "SELECT * FROM event_tbl WHERE evenet_id='$event_id' LIMIT 1";
+        $result = mysqli_query($con, $query);
+
+        if ($result) {
+
+            if (mysqli_num_rows($result) == 1) {
+
+                $res = mysqli_fetch_assoc($result);
+
+                $data = [
+                    'status' => 200,
+                    'message' => 'Event Fetched Successfully',
+                    'data' => $res
+                ];
+                header("HTTP/1.0 200 OK");
+                return json_encode($data);
+            } else {
+                $data = [
+                    'status' => 404,
+                    'message' => 'No Event Found',
+                ];
+                header("HTTP/1.0 404 Not Found");
+                return json_encode($data);
+            }
+        } else {
+
+            $data = [
+                'status' => 500,
+                'message' => 'Internal Server Error',
+            ];
+            header("HTTP/1.0 500 Internal Server Error");
+            return json_encode($data);
+        }
     }
 }
 /*--SINGLE READ Event Ends Here--*/
