@@ -21,13 +21,13 @@ if ($requestMethod == 'PUT') {
     $inputData = json_decode(file_get_contents("php://input"), true);
     if (empty($inputData)) {
 
-        $updateEvent = updateEvent($_POST);
+        $updateDonorAcc = updateDonorAcc($_POST);
     } else {
 
-        $updateEvent = updateEvent($inputData);
+        $updateDonorAcc = updateDonorAcc($inputData);
     }
 
-    echo $updateEvent;
+    echo $updateDonorAcc;
 } else {
     $data = [
         'status' => 405,
