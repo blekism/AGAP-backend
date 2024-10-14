@@ -1,33 +1,26 @@
 <?php
 
-error_reporting(0);
-
 header('Access-Control-Allow-Origin:*');
 header('Content-Type: application/json');
-header('Access-Control-Allow-Methods: PUT, OPTIONS');
+header('Access-Control-Allow-Methods: GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Request-With');
 
 include('../../function.php');
 
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
-if ($requestMethod == 'OPTIONS') {
+if ($requestMethod == "OPTIONS") {
+    // Send a 200 OK response for preflight requests
     http_response_code(200);
     exit();
 }
 
-if ($requestMethod == 'PUT') {
+if ($requestMethod == 'GET') {
 
-    $inputData = json_decode(file_get_contents("php://input"), true);
-    if (empty($inputData)) {
+    $readTotalEvents = readTotalEvents();
 
-        $updateVolunteerAcc = updateVolunteerAcc($_POST);
-    } else {
-
-        $updateVolunteerAcc = updateVolunteerAcc($inputData);
-    }
-
-    echo $updateVolunteerAcc;
+    echo $readTotalEvents;
+    exit();
 } else {
     $data = [
         'status' => 405,

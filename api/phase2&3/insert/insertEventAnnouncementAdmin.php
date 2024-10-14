@@ -2,7 +2,7 @@
 
 header('Access-Control-Allow-Origin:*');
 header('Content-Type: application/json');
-header('Access-Control-Allow-Methods: GET, OPTIONS');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Request-With');
 
 include('../../function.php');
@@ -18,8 +18,8 @@ if ($requestMethod == "OPTIONS") {
     exit();
 }
 
-if ($requestMethod == 'GET') {
-    // $session_token = $_COOKIE['donor_session_token'] ?? $_COOKIE['volun_session_token'] ?? '';
+if ($requestMethod == 'POST') {
+    // $session_token = $_COOKIE['session_token'] ?? '';
 
     // $query = "SELECT account_id, session_expire FROM account_tbl WHERE session_token = '$session_token'";
     // $result = mysqli_query($con, $query);
@@ -29,27 +29,28 @@ if ($requestMethod == 'GET') {
     //     $account_id = $res['account_id'];
     //     $session_expire = $res['session_expire'];
 
-    //     if (time() > $session_expire) { //prompt user to login again if session has expired
+    //     if (time() > $session_expire) {
     //         $invalidate_query = "UPDATE account_tbl SET session_token = NULL, session_expire = NULL WHERE account_id = '$account_id'";
     //         mysqli_query($con, $invalidate_query);
 
     //         $data = [
     //             'status' => 401,
-    //             'message' => 'Unauthorized',
+    //             'message' => 'Session Expired',
     //         ];
     //         header("HTTP/1.0 401 Unauthorized");
     //         echo json_encode($data);
-    //         exit();
-    //     } else { //proceed with function call since session is still valid
-    $readEvents = readEvents();
+    //     } else {
+    $inputData = json_decode(file_get_contents("php://input"), true);
 
-    echo $readEvents;
+    if (empty($inputData)) {
+        $insertEventAnnouncement = insertEventAnnouncement($_POST);
+    } else {
+        $insertEventAnnouncement = insertEventAnnouncement($inputData);
+    }
+    echo $insertEventAnnouncement;
     exit();
-    //     }
-    // } else { //prompt the user to login if session token is not found/null
-}
-//} 
-else {
+    //}
+} else {
     $data = [
         'status' => 405,
         'message' => $requestMethod . ' Method Not Allowed',

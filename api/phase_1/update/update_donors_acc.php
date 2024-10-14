@@ -1,5 +1,7 @@
 <?php
 
+error_reporting(0);
+
 header('Access-Control-Allow-Origin:*');
 header('Content-Type: application/json');
 header('Access-Control-Allow-Methods: PUT, OPTIONS');
@@ -17,19 +19,15 @@ if ($requestMethod == 'OPTIONS') {
 if ($requestMethod == 'PUT') {
 
     $inputData = json_decode(file_get_contents("php://input"), true);
-
     if (empty($inputData)) {
-        $data = [
-            'status' => 400,
-            'message' => 'Bad Request',
-        ];
-        header("HTTP/1.0 400 Bad Request");
-        echo json_encode($data);
-        exit();
+
+        $updateDonorAcc = updateDonorAcc($_POST);
     } else {
-        $deleteVolunteerAcc = deleteVolunteerAcc($inputData);
+
+        $updateDonorAcc = updateDonorAcc($inputData);
     }
-    echo $deleteVolunteerAcc;
+
+    echo $updateDonorAcc;
 } else {
     $data = [
         'status' => 405,

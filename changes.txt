@@ -60,51 +60,28 @@ show items as per category with total stock
 (DI PA TO NAGAGAWA)
 
 
-lets say gusto ni admin magdonate 10 bags so eenter nya sa system then submit, then magkakaltas sya ng sampung bags in total sa donation items tbl //
-tapos ang start date kung san sya magsstart magkaltas is yung earliest appearance ng bag item //
+
+counting of total volunteers//
+SELECT COUNT(*) AS total_volunteers FROM account_tbl
+WHERE is_volunteer = 'volunteer' AND acc_status_id = 1
 
 
-while ($donationItems = mysqli_fetch_assoc($result1)) {
-                    $in_stock = $donationItems['in_stock'];
-                    $donation_items_id = $donationItems['donation_items_id'];
+counting of total donors// // 
+SELECT COUNT(*) AS total_donors FROM account_tbl
+WHERE is_volunteer = 'donor' AND acc_status_id = 1
 
-                    if ($item_to_deduct > 0) {
-                        if ($in_stock >= $item_to_deduct) {
-                            $new_stock = $in_stock - $item_to_deduct;
-                            $query2 = "UPDATE 
-                                    donation_items_tbl 
-                                SET 
-                                    in_stock = '$new_stock' 
-                                WHERE 
-                                    donation_items_id = '$donation_items_id'";
-                            $result2 = mysqli_query($con, $query2);
+counting of total cost// 
+SELECT SUM(donation_items_tbl.cost) as total_cost
+FROM donation_items_tbl
+INNER JOIN donation_tbl ON donation_tbl.donation_id = donation_items_tbl.donation_id
+WHERE donation_tbl.status_id != 3000
 
-                            if ($result2) {
-                                $item_to_deduct = 0;
-                            } else {
-                                return error422('Error updating stock');
-                            }
-                        } else {
-                            $item_to_deduct -= $in_stock;
-                            $query3 = "UPDATE donation_items_tbl SET in_stock = 0 WHERE donation_items_id = '$donation_items_id'";
-                            $result3 = mysqli_query($con, $query3);
+counting of total donations//
+SELECT COUNT(*) as total_donations
+FROM donation_tbl
+WHERE status_id != 3000
 
-                            if (!$result3) {
-                                return error422('Error updating stock');
-                            }
-                        }
-                    }
-                }
-
-                if ($item_to_deduct > 0) {
-                    return error422('Not enough stock to deduct the requested amount');
-                } else {
-                    $data = [
-                        'status' => 200,
-                        'message' => 'Stock Deducted Successfully',
-                    ];
-                    header("HTTP/1.0 200 OK");
-                    return json_encode($data);
-                }
-
- 
+counting of total events//
+SELECT COUNT(*) as total_events
+FROM event_tbl
+WHERE event_status != 'upcoming'

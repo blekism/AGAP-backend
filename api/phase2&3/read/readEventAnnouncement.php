@@ -1,10 +1,8 @@
 <?php
 
-error_reporting(0);
-
 header('Access-Control-Allow-Origin:*');
 header('Content-Type: application/json');
-header('Access-Control-Allow-Methods: PUT, OPTIONS');
+header('Access-Control-Allow-Methods: GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Request-With');
 
 include('../../function.php');
@@ -16,22 +14,14 @@ if ($requestMethod == 'OPTIONS') {
     exit();
 }
 
-if ($requestMethod == 'PUT') {
+if ($requestMethod == 'GET') {
 
-    $inputData = json_decode(file_get_contents("php://input"), true);
-    if (empty($inputData)) {
-
-        $updateVolunteerAcc = updateVolunteerAcc($_POST);
-    } else {
-
-        $updateVolunteerAcc = updateVolunteerAcc($inputData);
-    }
-
-    echo $updateVolunteerAcc;
+    $getEventAnnouncementList = getEventAnnouncementList();
+    echo $getEventAnnouncementList;
 } else {
     $data = [
         'status' => 405,
-        'message' => $requestMethod . ' Method Not Allowed',
+        'message' => $requestMethod . 'Method Not Allowed',
     ];
     header("HTTP/1.0 405 Method Not Allowed");
     echo json_encode($data);

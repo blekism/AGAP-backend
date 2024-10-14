@@ -25,37 +25,41 @@ if ($requestMethod == "OPTIONS") {
 
 if ($requestMethod == 'POST') {
 
-    $session_token = $_COOKIE['donor_token'] ?? '';
+    // $session_token = $_COOKIE['session_token'] ?? '';
 
-    try {
-        $secret_key = 'mamamobading';
-        $decoded = JWT::decode($session_token, new Key($secret_key, 'HS256'));
+    // $query = "SELECT account_id, session_expire FROM account_tbl WHERE session_token = '$session_token'";
+    // $result = mysqli_query($con, $query);
 
-        $account_id = $decoded->sub;
-        $expiration = $decoded->exp;
+    // if ($result && mysqli_num_rows($result) == 1) {
+    //     $res = mysqli_fetch_assoc($result);
+    //     $account_id = $res['account_id'];
+    //     $session_expire = $res['session_expire'];
 
-        if (time() > $expiration) {
-            $data = [
-                'status' => 401,
-                'message' => 'Unauthorized',
-            ];
-            header("HTTP/1.0 401 Unauthorized");
-            echo json_encode($data);
-            exit();
-        } else {
-            $readPhase2Log = readPhase2Log($account_id);
-            echo $readPhase2Log;
-            exit();
-        }
-    } catch (ExpiredException $e) {
-        $data = [
-            'status' => 401,
-            'message' => 'Unauthorized',
-        ];
-        header("HTTP/1.0 401 Unauthorized");
-        echo json_encode($data);
-        exit();
-    }
+    //     if (time() > $session_expire) { //prompt user to login again if session has expired
+    //         $invalidate_query = "UPDATE account_tbl SET session_token = NULL, session_expire = NULL WHERE account_id = '$account_id'";
+    //         mysqli_query($con, $invalidate_query);
+
+    //         $data = [
+    //             'status' => 401,
+    //             'message' => 'Unauthorized',
+    //         ];
+    //         header("HTTP/1.0 401 Unauthorized");
+    //         echo json_encode($data);
+    //         exit();
+    //     } else { //proceed with function call since session is still valid
+    $readPhase2Log = readPhase2Log();
+
+    echo $readPhase2Log;
+    exit();
+    // }
+    // } else { //prompt the user to login if session token is not found/null
+    //     $data = [
+    //         'status' => 401,
+    //         'message' => 'Unauthorized',
+    //     ];
+    //     header("HTTP/1.0 401 Unauthorized");
+    //     echo json_encode($data);
+    // }
 } else {
     $data = [
         'status' => 405,

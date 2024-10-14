@@ -2,41 +2,37 @@
 
 error_reporting(0);
 
-header ('Access-Control-Allow-Origin:*');
-header ('Content-Type: application/json');
-header ('Access-Control-Allow-Methods: PUT, OPTIONS');
-header ('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Request-With');
+header('Access-Control-Allow-Origin:*');
+header('Content-Type: application/json');
+header('Access-Control-Allow-Methods: PUT, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Request-With');
 
-include ('../../function.php');
+include('../../function.php');
 
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
-if($requestMethod == 'OPTIONS'){
+if ($requestMethod == 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
-if($requestMethod == 'PUT'){
+if ($requestMethod == 'PUT') {
 
     $inputData = json_decode(file_get_contents("php://input"), true);
-    if(empty($inputData)){
+    if (empty($inputData)) {
 
-        $updateEvent = updateEvent($_POST, $_GET);
-
+        $updateEvent = updateEvent($_POST);
     } else {
 
-        $updateEvent = updateEvent($inputData, $_GET);
-
+        $updateEvent = updateEvent($inputData);
     }
 
     echo $updateEvent;
-
 } else {
     $data = [
         'status' => 405,
-        'message' => $requestMethod. ' Method Not Allowed',
+        'message' => $requestMethod . ' Method Not Allowed',
     ];
     header("HTTP/1.0 405 Method Not Allowed");
     echo json_encode($data);
 }
-?>
