@@ -1612,17 +1612,11 @@ function readEvents()
 // READ EVENTS END
 
 // READ PHASE 2 START
-function readPhase2Log($account_id)
+function readPhase2Log()
 {
     global $con;
 
-    if (!isset($account_id)) {
-        return error422('Volunteer ID not found in URL');
-    } elseif ($account_id == null) {
-        return error422('Volunteer ID is null');
-    } else {
-
-        $query = "SELECT 
+    $query = "SELECT 
             phase2_tbl.log_id, 
             event_tbl.event_name,
             account_tbl.last_name,
@@ -1630,101 +1624,85 @@ function readPhase2Log($account_id)
             phase2_tbl.activity,
             phase2_tbl.time_in,
             phase2_tbl.time_out,
-            phase2_tbl.signature,
             phase2_tbl.date
         FROM
             phase2_tbl
         INNER JOIN event_tbl ON phase2_tbl.event_id = event_tbl.evenet_id
-        INNER JOIN account_tbl ON phase2_tbl.account_id = account_tbl.account_id
-        WHERE 
-            phase2_tbl.account_id = '$account_id'";
-        $result = mysqli_query($con, $query);
+        INNER JOIN account_tbl ON phase2_tbl.account_id = account_tbl.account_id";
+    $result = mysqli_query($con, $query);
 
-        if ($result) {
-            if (mysqli_num_rows($result) > 0) {
-                $res = mysqli_fetch_all($result, MYSQLI_ASSOC);
-                $data = [
-                    'status' => 200,
-                    'message' => 'Phase 2 Fetched Successfully',
-                    'data' => $res,
-                ];
-                header("HTTP/1.0 200 OK");
-                return json_encode($data);
-            } else {
-                $data = [
-                    'status' => 404,
-                    'message' => 'No Phase 2 Found',
-                ];
-                header("HTTP/1.0 404 Not Found");
-                return json_encode($data);
-            }
+    if ($result) {
+        if (mysqli_num_rows($result) > 0) {
+            $res = mysqli_fetch_all($result, MYSQLI_ASSOC);
+            $data = [
+                'status' => 200,
+                'message' => 'Phase 2 Fetched Successfully',
+                'data' => $res,
+            ];
+            header("HTTP/1.0 200 OK");
+            return json_encode($data);
         } else {
             $data = [
-                'status' => 500,
-                'message' => 'Internal Server Error',
+                'status' => 404,
+                'message' => 'No Phase 2 Found',
             ];
-            header("HTTP/1.0 500 Internal Server Error");
+            header("HTTP/1.0 404 Not Found");
             return json_encode($data);
         }
+    } else {
+        $data = [
+            'status' => 500,
+            'message' => 'Internal Server Error',
+        ];
+        header("HTTP/1.0 500 Internal Server Error");
+        return json_encode($data);
     }
 }
 // READ PHASE 2 END
 
 // READ PHASE 3 START
-function readPhase3Log($userParams)
+function readPhase3Log()
 {
     global $con;
-
-    if (!isset($userParams['account_id'])) {
-        return error422('Account ID not found in URL');
-    } elseif ($userParams['account_id'] == null) {
-        return error422('Account ID is null');
-    } else {
-        $account_id = mysqli_real_escape_string($con, $userParams['account_id']);
-
-        $query = "SELECT 
+    $query = "SELECT 
             phase3_tbl.log_id, 
             event_tbl.event_name,
             account_tbl.last_name,
             account_tbl.first_name,
             phase3_tbl.time_in,
             phase3_tbl.time_out,
-            phase3_tbl.signature,
             phase3_tbl.date
         FROM
             phase3_tbl
         INNER JOIN event_tbl ON phase3_tbl.event_id = event_tbl.evenet_id
-        INNER JOIN volunteer_acc_tbl ON phase3_tbl.account_id = account_tbl.account_id
-        WHERE 
-            phase3_tbl.volunteer_id = '$account_id'";
-        $result = mysqli_query($con, $query);
+        INNER JOIN account_tbl ON phase3_tbl.account_id = account_tbl.account_id";
+    $result = mysqli_query($con, $query);
 
-        if ($result) {
-            if (mysqli_num_rows($result) > 0) {
-                $res = mysqli_fetch_all($result, MYSQLI_ASSOC);
-                $data = [
-                    'status' => 200,
-                    'message' => 'Phase 3 Fetched Successfully',
-                    'data' => $res,
-                ];
-                header("HTTP/1.0 200 OK");
-                return json_encode($data);
-            } else {
-                $data = [
-                    'status' => 404,
-                    'message' => 'No Phase 3 Found',
-                ];
-                header("HTTP/1.0 404 Not Found");
-                return json_encode($data);
-            }
+    if ($result) {
+        if (mysqli_num_rows($result) > 0) {
+            $res = mysqli_fetch_all($result, MYSQLI_ASSOC);
+            $data = [
+                'status' => 200,
+                'message' => 'Phase 3 Fetched Successfully',
+                'data' => $res,
+            ];
+            header("HTTP/1.0 200 OK");
+            return json_encode($data);
         } else {
             $data = [
-                'status' => 500,
-                'message' => 'Internal Server Error',
+                'status' => 404,
+                'message' => 'No Phase 3 Found',
             ];
-            header("HTTP/1.0 500 Internal Server Error");
+            header("HTTP/1.0 404 Not Found");
             return json_encode($data);
         }
+    } else {
+        $data = [
+            'status' => 500,
+            'message' => 'Internal Server Error',
+        ];
+        header("HTTP/1.0 500 Internal Server Error");
+        return json_encode($data);
     }
 }
 // READ PHASE 3 END
@@ -1757,6 +1735,58 @@ function updateDonationAccept($userInput, $account_id)
             header("HTTP/1.0 500 Internal Server Error");
             return json_encode($data);
         }
+    }
+}
+
+function updateDeclineDonation($userInput)
+{
+    global $con;
+
+    $donation_id = mysqli_real_escape_string($con, $userInput['donation_id']);
+
+    $query = "UPDATE donation_tbl SET status_id = 3004 WHERE donation_id = '$donation_id'";
+    $result = mysqli_query($con, $query);
+
+    if ($result) {
+        $data = [
+            'status' => 200,
+            'message' => 'Donation Declined Successfully',
+        ];
+        header("HTTP/1.0 200 OK");
+        return json_encode($data);
+    } else {
+        $data = [
+            'status' => 500,
+            'message' => 'Internal Server Error',
+        ];
+        header("HTTP/1.0 500 Internal Server Error");
+        return json_encode($data);
+    }
+}
+
+function updateDeclineVolunteer($userInput)
+{
+    global $con;
+
+    $account_id = mysqli_real_escape_string($con, $userInput['account_id']);
+
+    $query = "UPDATE account_tbl SET is_volunteer = 'declined' WHERE account_id = '$account_id'";
+    $result = mysqli_query($con, $query);
+
+    if ($result) {
+        $data = [
+            'status' => 200,
+            'message' => 'Volunteer Declined Successfully',
+        ];
+        header("HTTP/1.0 200 OK");
+        return json_encode($data);
+    } else {
+        $data = [
+            'status' => 500,
+            'message' => 'Internal Server Error',
+        ];
+        header("HTTP/1.0 500 Internal Server Error");
+        return json_encode($data);
     }
 }
 
@@ -2316,7 +2346,10 @@ function getDonorList()
     account_tbl
     INNER JOIN dept_category_tbl ON account_tbl.dept_category_id = dept_category_tbl.dept_category_id 
     INNER JOIN designation_category_tbl ON account_tbl.designation_id = designation_category_tbl.designation_id
-    WHERE account_tbl.is_volunteer IN ('donor', 'volunteer', 'volunteer_apply');";
+    WHERE 
+    account_tbl.is_volunteer IN ('donor', 'volunteer', 'volunteer_apply') AND 
+    verified_at IS NOT NULL AND 
+    acc_status_id = '1';";
 
     $query_run = mysqli_query($con, $query);
 
@@ -3329,7 +3362,7 @@ function getVolunteerList($userInput)
     account_tbl
     INNER JOIN dept_category_tbl ON account_tbl.dept_category_id = dept_category_tbl.dept_category_id
     INNER JOIN designation_category_tbl ON account_tbl.designation_id = designation_category_tbl.designation_id
-    WHERE account_tbl.is_volunteer = '$account_level';";
+    WHERE account_tbl.is_volunteer = '$account_level' AND verified_at IS NOT NULL AND acc_status_id = '1';";
 
         $query_run = mysqli_query($con, $query);
 
@@ -3564,22 +3597,26 @@ function updateVolunteerAcc($volunteerAccInput)
 }
 /*--UPDATE volunteer_acc Ends Here--*/
 /*--DELETE volunteer_acc Starts Here--*/
-function deleteVolunteerAcc($volunteerAccParams)
+function deleteVolunteerAcc($userInput)
 {
 
     global $con;
 
-    if (!isset($volunteerAccParams['account_id'])) {
+    $account_id = mysqli_real_escape_string($con, $userInput['account_id']);
 
-        return error422('Account id not found in URL');
-    } elseif ($volunteerAccParams['account_id'] == null) {
-
-        return error422('Enter the Account id');
-    }
-
-    $account_id = mysqli_real_escape_string($con, $volunteerAccParams['account_id']);
-
-    $query = "DELETE FROM account_tbl WHERE account_id LIKE 'VOLUN - %' AND account_id='$account_id' LIMIT 1";
+    $query = "UPDATE 
+        account_tbl 
+            SET 
+        acc_status_id = '2',
+        last_name = 'Deleted',
+        first_name = 'Deleted',
+        middle_name = 'Deleted',
+        section = 'Deleted',
+        email = 'Deleted',
+        password = 'Deleted',
+        contact_info = 'Deleted',
+        updated_at = CURDATE()
+        WHERE account_id='$account_id'";
 
     $result = mysqli_query($con, $query);
 
@@ -3683,4 +3720,197 @@ function getEventAnnouncementList()
         }
     }
 }
-  //get event announcement end
+//get event announcement end
+
+//read total donations start
+function readTotalDonation()
+{
+    global $con;
+
+    $query = "SELECT COUNT(*) as total_donations FROM donation_tbl WHERE status_id != 3000";
+    $result = mysqli_query($con, $query);
+
+    if ($result) {
+        if (mysqli_num_rows($result) > 0) {
+            $res = mysqli_fetch_assoc($result);
+
+            $data = [
+                'status' => 200,
+                'message' => 'Total Donation Fetched Successfully',
+                'data' => $res
+            ];
+            header("HTTP/1.0 200 OK");
+            return json_encode($data);
+        } else {
+            $data = [
+                'status' => 404,
+                'message' => 'No Donation Found',
+            ];
+            header("HTTP/1.0 404 No Donation Found");
+            return json_encode($data);
+        }
+    } else {
+        $data = [
+            'status' => 500,
+            'message' => 'Internal Server Error',
+        ];
+        header("HTTP/1.0 500 Internal Server Error");
+        return json_encode($data);
+    }
+}
+//read total donations end
+
+//read total events start
+function readTotalEvents()
+{
+    global $con;
+
+    $query = "SELECT COUNT(*) as total_events FROM event_tbl WHERE event_status != 'upcoming'";
+    $result = mysqli_query($con, $query);
+
+    if ($result) {
+        if (mysqli_num_rows($result) > 0) {
+            $res = mysqli_fetch_assoc($result);
+
+            $data = [
+                'status' => 200,
+                'message' => 'Total Events Fetched Successfully',
+                'data' => $res
+            ];
+            header("HTTP/1.0 200 OK");
+            return json_encode($data);
+        } else {
+            $data = [
+                'status' => 404,
+                'message' => 'No Events Found',
+            ];
+            header("HTTP/1.0 404 No Events Found");
+            return json_encode($data);
+        }
+    } else {
+        $data = [
+            'status' => 500,
+            'message' => 'Internal Server Error',
+        ];
+        header("HTTP/1.0 500 Internal Server Error");
+        return json_encode($data);
+    }
+}
+//read total events end
+
+//read total volunteers start
+function readTotalVolunteers()
+{
+    global $con;
+
+    $query = "SELECT COUNT(*) AS total_volunteers FROM account_tbl WHERE is_volunteer = 'volunteer' AND acc_status_id = 1";
+    $result = mysqli_query($con, $query);
+
+    if ($result) {
+        if (mysqli_num_rows($result) > 0) {
+            $res = mysqli_fetch_assoc($result);
+
+            $data = [
+                'status' => 200,
+                'message' => 'Total Volunteers Fetched Successfully',
+                'data' => $res
+            ];
+            header("HTTP/1.0 200 OK");
+            return json_encode($data);
+        } else {
+            $data = [
+                'status' => 404,
+                'message' => 'No Volunteers Found',
+            ];
+            header("HTTP/1.0 404 No Volunteers Found");
+            return json_encode($data);
+        }
+    } else {
+        $data = [
+            'status' => 500,
+            'message' => 'Internal Server Error',
+        ];
+        header("HTTP/1.0 500 Internal Server Error");
+        return json_encode($data);
+    }
+}
+//read total volunteers end
+
+//read total donors start
+function readTotalDonors()
+{
+    global $con;
+
+    $query = "SELECT COUNT(*) AS total_donors FROM account_tbl WHERE is_volunteer = 'donor' AND acc_status_id = 1";
+    $result = mysqli_query($con, $query);
+
+    if ($result) {
+        if (mysqli_num_rows($result) > 0) {
+            $res = mysqli_fetch_assoc($result);
+
+            $data = [
+                'status' => 200,
+                'message' => 'Total Donors Fetched Successfully',
+                'data' => $res
+            ];
+            header("HTTP/1.0 200 OK");
+            return json_encode($data);
+        } else {
+            $data = [
+                'status' => 404,
+                'message' => 'No Donors Found',
+            ];
+            header("HTTP/1.0 404 No Donors Found");
+            return json_encode($data);
+        }
+    } else {
+        $data = [
+            'status' => 500,
+            'message' => 'Internal Server Error',
+        ];
+        header("HTTP/1.0 500 Internal Server Error");
+        return json_encode($data);
+    }
+}
+//read total donors end
+
+//read total cost start
+function readTotalCost()
+{
+    global $con;
+
+    $query = "SELECT SUM(donation_items_tbl.cost) as total_cost FROM donation_items_tbl
+                    INNER JOIN donation_tbl ON donation_tbl.donation_id = donation_items_tbl.donation_id
+                    WHERE donation_tbl.status_id != 3000";
+    $result = mysqli_query($con, $query);
+
+    if ($result) {
+        if (mysqli_num_rows($result) > 0) {
+            $res = mysqli_fetch_assoc($result);
+
+            $data = [
+                'status' => 200,
+                'message' => 'Total Cost Fetched Successfully',
+                'data' => $res
+            ];
+            header("HTTP/1.0 200 OK");
+            return json_encode($data);
+        } else {
+            $data = [
+                'status' => 404,
+                'message' => 'No Cost Data Found',
+            ];
+            header("HTTP/1.0 404 No Cost Data Found");
+            return json_encode($data);
+        }
+    } else {
+        $data = [
+            'status' => 500,
+            'message' => 'Internal Server Error',
+        ];
+        header("HTTP/1.0 500 Internal Server Error");
+        return json_encode($data);
+    }
+}
+
+    //read total cost end
