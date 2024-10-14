@@ -23,7 +23,6 @@ if ($requestMethod == "OPTIONS") {
 }
 
 if ($requestMethod == 'GET') {
-
     $session_token = $_COOKIE['donor_token'] ?? '';
 
     try {
@@ -42,9 +41,9 @@ if ($requestMethod == 'GET') {
             echo json_encode($data);
             exit();
         } else {
-            $readDonorProfile = readDonorProfile($account_id);
+            $readTotalDonationsAcceptedByVolunteer = readTotalDonationsAcceptedByVolunteer($account_id);
 
-            echo $readDonorProfile;
+            echo $readTotalDonationsAcceptedByVolunteer;
             exit();
         }
     } catch (ExpiredException $e) {

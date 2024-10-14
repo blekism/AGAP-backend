@@ -41,7 +41,7 @@ if ($requestMethod == 'POST') {
     //         echo json_encode($data);
     //         exit();
     //     } else { //proceed with function call since session is still valid
-        
+
     $inputData = json_decode(file_get_contents("php://input"), true);
 
     if (empty($inputData)) {
@@ -51,7 +51,7 @@ if ($requestMethod == 'POST') {
     }
     echo $readDonationItems;
     exit();
-        // }
+    // }
     // } else { //prompt the user to login if session token is not found/null
     //     $data = [
     //         'status' => 401,

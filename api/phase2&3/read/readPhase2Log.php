@@ -1,14 +1,19 @@
 <?php
 
-header('Access-Control-Allow-Origin:*');
+header('Access-Control-Allow-Origin: http://localhost:5173');
+header("Access-Control-Allow-Credentials: true");
 header('Content-Type: application/json');
-header('Access-Control-Allow-Methods: GET, OPTIONS');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Request-With');
 
 include('../../function.php');
 require '../../../inc/dbcon.php';
+require '../../../vendor/autoload.php'; // Include Composer's autoloader
 
-global $con;
+use Firebase\JWT\JWT;
+use Firebase\JWT\ExpiredException;
+use Firebase\JWT\Key;
+
 
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
@@ -18,22 +23,18 @@ if ($requestMethod == "OPTIONS") {
     exit();
 }
 
-if ($requestMethod == 'GET') {
+if ($requestMethod == 'POST') {
 
-    $session_token = $_COOKIE['session_token'] ?? '';
+    $session_token = $_COOKIE['donor_token'] ?? '';
 
-    $query = "SELECT account_id, session_expire FROM account_tbl WHERE session_token = '$session_token'";
-    $result = mysqli_query($con, $query);
+    try {
+        $secret_key = 'mamamobading';
+        $decoded = JWT::decode($session_token, new Key($secret_key, 'HS256'));
 
-    if ($result && mysqli_num_rows($result) == 1) {
-        $res = mysqli_fetch_assoc($result);
-        $account_id = $res['account_id'];
-        $session_expire = $res['session_expire'];
+        $account_id = $decoded->sub;
+        $expiration = $decoded->exp;
 
-        if (time() > $session_expire) { //prompt user to login again if session has expired
-            $invalidate_query = "UPDATE account_tbl SET session_token = NULL, session_expire = NULL WHERE account_id = '$account_id'";
-            mysqli_query($con, $invalidate_query);
-
+        if (time() > $expiration) {
             $data = [
                 'status' => 401,
                 'message' => 'Unauthorized',
@@ -41,19 +42,19 @@ if ($requestMethod == 'GET') {
             header("HTTP/1.0 401 Unauthorized");
             echo json_encode($data);
             exit();
-        } else { //proceed with function call since session is still valid
+        } else {
             $readPhase2Log = readPhase2Log($account_id);
-
             echo $readPhase2Log;
             exit();
         }
-    } else { //prompt the user to login if session token is not found/null
+    } catch (ExpiredException $e) {
         $data = [
             'status' => 401,
             'message' => 'Unauthorized',
         ];
         header("HTTP/1.0 401 Unauthorized");
         echo json_encode($data);
+        exit();
     }
 } else {
     $data = [

@@ -14,6 +14,7 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\ExpiredException;
 use Firebase\JWT\Key;
 
+
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
 if ($requestMethod == "OPTIONS") {
@@ -42,9 +43,8 @@ if ($requestMethod == 'GET') {
             echo json_encode($data);
             exit();
         } else {
-            $readDonorProfile = readDonorProfile($account_id);
-
-            echo $readDonorProfile;
+            $readVolunteerPhase2Log = readVolunteerPhase2Log($account_id);
+            echo $readVolunteerPhase2Log;
             exit();
         }
     } catch (ExpiredException $e) {

@@ -1,14 +1,18 @@
 <?php
 
-header('Access-Control-Allow-Origin:*');
+header('Access-Control-Allow-Origin: http://localhost:5173');
+header("Access-Control-Allow-Credentials: true");
 header('Content-Type: application/json');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Request-With');
 
 include('../../function.php');
 require '../../../inc/dbcon.php';
+require '../../../vendor/autoload.php'; // Include Composer's autoloader
 
-global $con;
+use Firebase\JWT\JWT;
+use Firebase\JWT\ExpiredException;
+use Firebase\JWT\Key;
 
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
@@ -19,45 +23,50 @@ if ($requestMethod == "OPTIONS") {
 }
 
 if ($requestMethod == 'POST') {
-    $session_token = $_COOKIE['volun_session_token'] ?? '';
+    // $session_token = $_COOKIE['donor_token'] ?? '';
 
-    $query = "SELECT account_id, session_expire FROM account_tbl WHERE session_token = '$session_token'";
-    $result = mysqli_query($con, $query);
 
-    if ($result && mysqli_num_rows($result) == 1) {
-        $res = mysqli_fetch_assoc($result);
-        $account_id = $res['account_id'];
-        $session_expire = $res['session_expire'];
+    // try {
+    //     $secret_key = 'mamamobading';
+    //     $decoded = JWT::decode($session_token, new Key($secret_key, 'HS256'));
 
-        if (time() > $session_expire) {
-            $invalidate_query = "UPDATE account_tbl SET session_token = NULL, session_expire = NULL WHERE account_id = '$account_id'";
-            mysqli_query($con, $invalidate_query);
+    //     $account_id = $decoded->sub;
+    //     $expiration = $decoded->exp;
 
-            $data = [
-                'status' => 401,
-                'message' => 'Session Expired',
-            ];
-            header("HTTP/1.0 401 Unauthorized");
-            echo json_encode($data);
-        } else {
-            $inputData = json_decode(file_get_contents("php://input"), true);
+    //     if (time() > $expiration) {
+    //         $data = [
+    //             'status' => 401,
+    //             'message' => 'Unauthorized',
+    //         ];
+    //         header("HTTP/1.0 401 Unauthorized");
+    //         echo json_encode($data);
+    //         exit();
+    //     } else {
+    $inputData = json_decode(file_get_contents("php://input"), true);
 
-            if (empty($inputData)) {
-                $insertPhase2 = insertPhase2($_POST, $account_id);
-            } else {
-                $insertPhase2 = insertPhase2($inputData, $account_id);
-            }
-            echo $insertPhase2;
-            exit();
-        }
-    } else {
+    if (empty($inputData)) {
         $data = [
-            'status' => 401,
-            'message' => 'Unauthorized',
+            'status' => 400,
+            'message' => 'Bad Request',
         ];
-        header("HTTP/1.0 401 Unauthorized");
+        header("HTTP/1.0 400 Bad Request");
         echo json_encode($data);
+        exit();
+    } else {
+        $insertPhase2 = insertPhase2($inputData);
     }
+    echo $insertPhase2;
+    exit();
+    // }
+    // } catch (ExpiredException $e) {
+    //     $data = [
+    //         'status' => 401,
+    //         'message' => 'Unauthorized',
+    //     ];
+    //     header("HTTP/1.0 401 Unauthorized");
+    //     echo json_encode($data);
+    //     exit();
+    // }
 } else {
     $data = [
         'status' => 405,
