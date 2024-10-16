@@ -75,6 +75,8 @@ function deductFromStock($userInput)
 {
     global $con;
 
+    $event_id = mysqli_real_escape_string($con, $userInput['event_id']);
+
     if (!isset($userInput['items'])) {
         return error422('required items not found');
     } elseif ($userInput['items'] == null) {
@@ -125,6 +127,7 @@ function deductFromStock($userInput)
                 } else {
                     while ($donationItems = mysqli_fetch_assoc($result1)) {
                         $in_stock = $donationItems['in_stock'];
+                        $cost = $donationItems['cost']; // purpose is to add to contribution amount of the event
                         $donation_items_id = $donationItems['donation_items_id'];
 
                         if ($item_to_deduct > 0) {
@@ -139,11 +142,24 @@ function deductFromStock($userInput)
                                 $result2 = mysqli_query($con, $query2);
 
                                 if ($result2) {
+                                    // Calculate the percentage of stock used
+                                    $percentage_used = $item_to_deduct / $in_stock;
+                                    // Calculate the contribution amount
+                                    $contribution_amount = $cost * $percentage_used;
+
+                                    //query here para sa pagupdate ng contribution event including yung event id
+
+
                                     $item_to_deduct = 0;
                                 } else {
                                     return error422('Error updating stock');
                                 }
                             } else {
+
+                                $percentage_used = $in_stock / $item_to_deduct;
+                                $contribution_amount = $cost * $percentage_used;
+
+                                //query here para sa pagupdate ng contribution event including yung event id
                                 $item_to_deduct = $item_to_deduct - $in_stock;
                                 $query3 = "UPDATE donation_items_tbl SET in_stock = 0 WHERE donation_items_id = '$donation_items_id'";
                                 $result3 = mysqli_query($con, $query3);
@@ -178,6 +194,7 @@ function readAllDonations($userInput)
     } else {
         $query = "SELECT 
         donation_tbl.donation_id,
+        donation_tbl.total_cost,
         donor_account.last_name AS donor_lastName, 
         donation_status_tbl.status_name,
         recipient_category_tbl.recipient_type, 
@@ -358,7 +375,6 @@ function readSpeicifcCategory($category_id)
     }
 }
 
-//INSERT DONATION START
 function insertDonation($userInput)
 {
     global $con;
@@ -367,6 +383,7 @@ function insertDonation($userInput)
     $donation_id = 'DONATE' . date('Y-d') . '-' . uniqid();
     $recipient_id = mysqli_real_escape_string($con, $userInput['recipient_id']);
     $account_id = mysqli_real_escape_string($con, $userInput['account_id']);
+    $total_cost = mysqli_real_escape_string($con, $userInput['total_cost']);
     $itemLoop = $userInput['items'];
 
     if (empty(trim($recipient_id))) {
@@ -378,10 +395,12 @@ function insertDonation($userInput)
             donation_tbl(
                 donation_id, 
                 account_id, 
+                total_cost,
                 recipient_id) 
             VALUES(
                 '$donation_id', 
                 '$account_id', 
+                '$total_cost',
                 '$recipient_id')";
         $result = mysqli_query($con, $query);
 
@@ -461,9 +480,7 @@ function insertDonation($userInput)
         }
     }
 }
-//INSERT DONATION END
 
-//INSERT VOLUNTEER START
 function signVolunteer($userInput)
 {
     global $con;
@@ -561,9 +578,7 @@ function signVolunteer($userInput)
         return error422('Enter Email and Password');
     }
 }
-//INSERT VOLUNTEER END
 
-//INSERT VOLUNTEER START
 function signDonor($userInput)
 {
     global $con;
@@ -664,9 +679,7 @@ function signDonor($userInput)
         return error422('Enter Email and Password');
     }
 }
-//INSERT VOLUNTEER END
 
-//UPDATE VERIFICATION START
 function updateVerification($userInput)
 {
     global $con;
@@ -730,9 +743,7 @@ function updateVerification($userInput)
         }
     }
 }
-//UPDATE VERIFICATION END
 
-//INSERT & DELETE VOLUNTEER SIGNUP TO ACCOUNT START
 function loginVolunteerAcc($userInput)
 {
     global $con;
@@ -827,9 +838,7 @@ function loginVolunteerAcc($userInput)
         return error422('Enter Email and Password');
     }
 }
-//INSERT & DELETE VOLUNTEER SIGNUP TO ACCOUNT END
 
-//INSERT & DELETE VOLUNTEER SIGNUP TO ACCOUNT START
 function loginDonorAcc($userInput)
 {
     global $con;
@@ -916,9 +925,7 @@ function loginDonorAcc($userInput)
         return error422('Enter Email and Password');
     }
 }
-//INSERT & DELETE VOLUNTEER SIGNUP TO ACCOUNT END
 
-//INSERT EVENT START
 function insertEvent($userInput)
 {
     global $con;
@@ -980,10 +987,8 @@ function insertEvent($userInput)
         }
     }
 }
-//INSERT EVENT END 
 
 
-//INSERT PHASE 2 START
 function insertPhase2($userInput)
 {
 
@@ -1033,9 +1038,7 @@ function insertPhase2($userInput)
         }
     }
 }
-//INSERT PHASE 2 END
 
-//INSERT PHASE 3 START
 function insertPhase3($userInput)
 {
     global $con;
@@ -1089,9 +1092,7 @@ function insertPhase3($userInput)
         }
     }
 }
-//INSERT PHASE 3 END
 
-//DELETE DONOR START
 function deleteAccount($account_id)
 {
     global $con;
@@ -1136,9 +1137,7 @@ function deleteAccount($account_id)
         }
     }
 }
-//DELETE DONOR END
 
-//DELETE DONOR DONATION START
 function deleteDonation($userParams)
 {
     global $con;
@@ -1196,9 +1195,7 @@ function deleteDonation($userParams)
         }
     }
 }
-//DELETE DONOR DONATION END
 
-// UPDATE DONATION ITEMS START
 function updateDonationItems($userParams, $userInput)
 {
     global $con;
@@ -1257,10 +1254,8 @@ function updateDonationItems($userParams, $userInput)
         }
     }
 }
-// UPDATE DONATION ITEMS END
 
 
-// UPDATE DONOR ACC START
 function updateAccount($account_id, $userInput)
 {
     global $con;
@@ -1328,9 +1323,7 @@ function updateAccount($account_id, $userInput)
         }
     }
 }
-// UPDATE DONOR ACC END
 
-// READ DONOR DONATION ON ACCOUNT START
 function readDonationDonor($userParams)
 {
     global $con;
@@ -1384,9 +1377,7 @@ function readDonationDonor($userParams)
         }
     }
 }
-// READ DONOR DONATION ON ACCOUNT END
 
-// READ DONOR DONATION ITEMS START
 function readDonationItems($userInput)
 {
     global $con;
@@ -1440,19 +1431,10 @@ function readDonationItems($userInput)
         }
     }
 }
-// READ DONOR DONATION ITEMS END
 
-// READ VOLUNTEER PROFILE START
 function readVolunteerProfile($account_id)
 {
     global $con;
-
-    // if (!isset($userParams['account_id'])) {
-    //     return error422('Account ID not found in URL');
-    // } elseif ($userParams['account_id'] == null) {
-    //     return error422('Account ID is null');
-    // } else {
-
 
     $query = "SELECT 
             account_tbl.last_name,
@@ -1493,20 +1475,13 @@ function readVolunteerProfile($account_id)
             return json_encode($data);
         }
     }
-    // }
 }
-// READ VOLUNTEER PROFILE END
 
-// READ DONOR PROFILE START
 function readDonorProfile($account_id)
 {
     global $con;
 
-    // if (!isset($account_id)) {
-    //     return error422('Account ID not found in URL');
-    // } elseif ($account_id == null) {
-    //     return error422('Account ID is null');
-    // } else {
+
     $query = "SELECT
             account_tbl.account_id, 
             account_tbl.last_name,
@@ -1547,7 +1522,6 @@ function readDonorProfile($account_id)
         }
     }
 }
-// READ DONOR PROFILE END
 
 function readAccountID($account_id)
 {
@@ -1578,7 +1552,6 @@ function readAccountID($account_id)
     }
 }
 
-// READ PARTNERS START
 function readPartners()
 {
     global $con;
@@ -1613,9 +1586,7 @@ function readPartners()
         return json_encode($data);
     }
 }
-// READ PARTNERS END
 
-// READ EVENTS START
 function readEvents()
 {
     global $con;
@@ -1650,9 +1621,7 @@ function readEvents()
         return json_encode($data);
     }
 }
-// READ EVENTS END
 
-// READ PHASE 2 START
 function readPhase2Log()
 {
     global $con;
@@ -1699,9 +1668,7 @@ function readPhase2Log()
         return json_encode($data);
     }
 }
-// READ PHASE 2 END
 
-// READ PHASE 3 START
 function readPhase3Log()
 {
     global $con;
@@ -1746,9 +1713,7 @@ function readPhase3Log()
         return json_encode($data);
     }
 }
-// READ PHASE 3 END
 
-// UPDATE DONATION ACCEPT START
 function updateDonationAccept($userInput, $account_id)
 {
     global $con;
@@ -1831,8 +1796,6 @@ function updateDeclineVolunteer($userInput)
     }
 }
 
-
-// UPDATE DONATION ACCEPT END
 
 function loginAdminAcc($adminAccInput)
 {
@@ -1922,9 +1885,7 @@ function loginAdminAcc($adminAccInput)
     }
 }
 
-/*--LOGIN admin_acc Ends Here--*/
 
-/*--INSERT admin_acc Starts Here--*/
 function insertAdminAcc($adminAccInput)
 {
 
@@ -1987,8 +1948,7 @@ function insertAdminAcc($adminAccInput)
         return error422('Enter Email and Password');
     }
 }
-/*--INSERT admin_acc Ends Here--*/
-/*--UPDATE admin_acc Starts Here--*/
+
 function updateAdminAcc($adminAccInput, $adminParams)
 {
 
@@ -2054,8 +2014,6 @@ function updateAdminAcc($adminAccInput, $adminParams)
         }
     }
 }
-/*--UPDATE admin_acc Ends Here--*/
-/*--DELETE admin_acc Starts Here--*/
 function deleteAdminAcc($adminParams)
 {
 
@@ -2092,12 +2050,8 @@ function deleteAdminAcc($adminParams)
         return json_encode($data);
     }
 }
-/*--DELETE admin_acc Ends Here--*/
-/*--ADMIN_ACC_TBL--*/
 
 
-/*--DEPT_CATEGORY_TBL--*/
-/*--INSERT dept_category Starts Here--*/
 function insertDeptCategory($deptCategoryInput)
 {
 
@@ -2132,65 +2086,7 @@ function insertDeptCategory($deptCategoryInput)
         }
     }
 }
-/*--INSERT dept_category Ends Here--*/
-/*--DEPT_CATEGORY_TBL--*/
 
-
-/*--DONATION_TBL--*/
-/*--READ Donation List Starts Here--*/
-// function getDonationList(){
-
-//     global $conn;
-
-//     $query = "SELECT 
-//         donation_tbl.donation_id,
-//         donation_status_tbl.status_name,
-//         recipient_category_tbl.recipient_type,
-//         event_tbl.event_name,
-//         donation_tbl.received_by
-//     FROM
-//     donation_tbl
-//     INNER JOIN donation_status_tbl ON donation_tbl.status_id = donation_status_tbl.status_id
-//     INNER JOIN recipient_category_tbl ON donation_tbl.recipient_id = recipient_category_tbl.recipient_category_id
-//     INNER JOIN event_tbl ON donation_tbl.event_id = event_tbl.evenet_id;";
-
-//     $query_run = mysqli_query($conn, $query);
-
-//     if($query_run){
-
-//         if(mysqli_num_rows($query_run) > 0){
-
-//             $res = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
-
-//             $data = [
-//                 'status' => 200,
-//                 'message' => 'Donation List Fetched Successfully',
-//                 'data' => $res
-//             ];
-//             header("HTTP/1.0 200 OK");
-//             return json_encode($data);
-
-//         } else {
-//             $data = [
-//                 'status' => 404,
-//                 'message' => 'No Donation Found',
-//             ];
-//             header("HTTP/1.0 404 No Donation Found");
-//             return json_encode($data);
-//         }
-
-//     } else {
-//         $data = [
-//             'status' => 500,
-//             'message' => 'Internal Server Error',
-//         ];
-//         header("HTTP/1.0 500 Internal Server Error");
-//         return json_encode($data);
-//     }
-// }
-/*--READ Donation List Ends Here--*/
-
-/*--SINGLE READ Donation Starts Here--*/
 function getDonation($donationParams)
 {
 
@@ -2249,12 +2145,7 @@ function getDonation($donationParams)
         return json_encode($data);
     }
 }
-/*--SINGLE READ Donation Ends Here--*/
-/*--DONATION_TBL--*/
 
-
-/*--DONATION_ITEMS_TBL--*/
-/*--READ Donation Items List Starts Here--*/
 function getDonationItemsList()
 {
 
@@ -2302,8 +2193,7 @@ function getDonationItemsList()
         return json_encode($data);
     }
 }
-/*--READ Donation Items List Ends Here--*/
-/*--SINGLE READ Donation Items Starts Here--*/
+
 function getDonationItem($donationItemsParams)
 {
 
@@ -2360,12 +2250,8 @@ function getDonationItem($donationItemsParams)
         return json_encode($data);
     }
 }
-/*--SINGLE READ Donation Items Ends Here--*/
-/*--DONATION_ITEMS_TBL--*/
 
 
-/*--DONORS_ACC_TBL--*/
-/*--READ Donor List Starts Here--*/
 function getDonorList()
 {
 
@@ -2424,8 +2310,7 @@ function getDonorList()
         return json_encode($data);
     }
 }
-/*--READ Donor List Ends Here--*/
-/*--SINGLE READ Donor Starts Here--*/
+
 function getDonor($userInput)
 {
 
@@ -2480,8 +2365,7 @@ function getDonor($userInput)
         return json_encode($data);
     }
 }
-/*--SINGLE READ Donor Ends Here--*/
-/*--UPDATE donor_acc Starts Here--*/
+
 function updateDonorAcc($donorAccInput)
 {
 
@@ -2559,8 +2443,7 @@ function updateDonorAcc($donorAccInput)
         }
     }
 }
-/*--UPDATE donor_acc Ends Here--*/
-/*--DELETE donor_acc Starts Here--*/
+
 function deleteDonorAcc($donorAccParams)
 {
 
@@ -2598,13 +2481,7 @@ function deleteDonorAcc($donorAccParams)
         return json_encode($data);
     }
 }
-/*--DELETE donor acc Ends Here--*/
-/*--DONORS_ACC_TBL--*/
 
-
-
-/*--EVENT_TBL--*/
-/*--READ Event List Starts Here--*/
 function getEventList()
 {
 
@@ -2643,8 +2520,7 @@ function getEventList()
         return json_encode($data);
     }
 }
-/*--READ Event List Ends Here--*/
-/*--SINGLE READ Event Starts Here--*/
+
 function getEvent($eventInput)
 {
     global $con;
@@ -2691,11 +2567,7 @@ function getEvent($eventInput)
         }
     }
 }
-/*--SINGLE READ Event Ends Here--*/
-/*--INSERT event Starts Here--*/
 
-/*--INSERT Event Ends Here--*/
-/*--UPDATE Event Starts Here--*/
 function updateEvent($eventInput)
 {
 
@@ -2753,14 +2625,7 @@ function updateEvent($eventInput)
         }
     }
 }
-/*--UPDATE Event Ends Here--*/
-/*--DELETE Event Starts Here--*/
 
-/*--EVENT_TBL--*/
-
-
-/*--ITEMS_CATEGORY_TBL--*/
-/*--INSERT category Starts Here--*/
 function insertItemCategory($itemCategoryInput)
 {
 
@@ -2795,12 +2660,7 @@ function insertItemCategory($itemCategoryInput)
         }
     }
 }
-/*--INSERT category Ends Here--*/
-/*--ITEMS_CATEGORY_TBL--*/
 
-
-/*--PARTNERS_TBL--*/
-/*--READ Partner List Starts Here--*/
 function getPartnerList()
 {
 
@@ -2839,8 +2699,7 @@ function getPartnerList()
         return json_encode($data);
     }
 }
-/*--READ Partner List Ends Here--*/
-/*--SINGLE READ Partner Starts Here--*/
+
 function getPartner($partnerParams)
 {
 
@@ -2887,8 +2746,7 @@ function getPartner($partnerParams)
         return json_encode($data);
     }
 }
-/*--SINGLE READ Partner Ends Here--*/
-/*--INSERT partners Starts Here--*/
+
 function insertPartner($partnerInput)
 {
 
@@ -2924,8 +2782,7 @@ function insertPartner($partnerInput)
         }
     }
 }
-/*--INSERT Partner Ends Here--*/
-/*--UPDATE Partner Starts Here--*/
+
 function updatePartner($partnerInput, $partnerParams)
 {
 
@@ -2969,8 +2826,7 @@ function updatePartner($partnerInput, $partnerParams)
         }
     }
 }
-/*--UPDATE Partner Ends Here--*/
-/*--DELETE Partner Starts Here--*/
+
 function deletePartner($partnerParams)
 {
 
@@ -3007,12 +2863,7 @@ function deletePartner($partnerParams)
         return json_encode($data);
     }
 }
-/*--DELETE Partner Ends Here--*/
-/*--PARTNERS_TBL--*/
 
-
-/*--PHASE2_TBL--*/
-/*--READ Phase2 List Starts Here--*/
 function getPhase2List()
 {
 
@@ -3065,8 +2916,7 @@ function getPhase2List()
         return json_encode($data);
     }
 }
-/*--READ Phase2 List Ends Here--*/
-/*--SINGLE READ Phase2 Starts Here--*/
+
 function getPhase2($phase2Params)
 {
 
@@ -3128,8 +2978,7 @@ function getPhase2($phase2Params)
         return json_encode($data);
     }
 }
-/*--SINGLE READ Phase2 Ends Here--*/
-/*--UPDATE Phase2 Starts Here--*/
+
 function updatePhase2($phase2Input, $phase2Params)
 {
 
@@ -3192,12 +3041,7 @@ function updatePhase2($phase2Input, $phase2Params)
         }
     }
 }
-/*--UPDATE admin_acc Ends Here--*/
-/*--PHASE2_TBL--*/
 
-
-/*--PHASE3_TBL--*/
-/*--READ Phase3 List Starts Here--*/
 function getPhase3List()
 {
 
@@ -3249,8 +3093,7 @@ function getPhase3List()
         return json_encode($data);
     }
 }
-/*--READ Phase2 List Ends Here--*/
-/*--SINGLE READ Phase2 Starts Here--*/
+
 function getPhase3($phase3Params)
 {
 
@@ -3311,8 +3154,7 @@ function getPhase3($phase3Params)
         return json_encode($data);
     }
 }
-/*--SINGLE READ Phase2 Ends Here--*/
-/*--UPDATE Phase2 Starts Here--*/
+
 function updatePhase3($phase3Input, $phase3Params)
 {
 
@@ -3371,12 +3213,7 @@ function updatePhase3($phase3Input, $phase3Params)
         }
     }
 }
-/*--UPDATE admin_acc Ends Here--*/
-/*--PHASE3_TBL--*/
 
-
-/*--VOLUNTEER_ACC_TBL--*/
-/*--READ Volunteer List Starts Here--*/
 function getVolunteerList($userInput)
 {
 
@@ -3438,8 +3275,7 @@ function getVolunteerList($userInput)
         }
     }
 }
-/*--READ Volunteer List Ends Here--*/
-/*--SINGLE READ Volunteer Starts Here--*/
+
 function getVolunteer($userInput)
 {
 
@@ -3503,63 +3339,6 @@ function getVolunteer($userInput)
     }
 }
 
-// function getApplicantVolunteerList()
-// {
-
-//     global $con;
-
-//     $query = "SELECT 
-//         account_tbl.account_id, 
-//         account_tbl.last_name,
-//         account_tbl.first_name,
-//         account_tbl.middle_name,
-//         account_tbl.section,
-//         dept_category_tbl.category_name,
-//         designation_category_tbl.designation_name,
-//         account_tbl.email,
-//         account_tbl.contact_info,
-//         account_tbl.total_hours
-//     FROM
-//     account_tbl
-//     INNER JOIN dept_category_tbl ON account_tbl.dept_category_id = dept_category_tbl.dept_category_id
-//     INNER JOIN designation_category_tbl ON account_tbl.designation_id = designation_category_tbl.designation_id
-//     WHERE account_tbl.is_volunteer = 'volunteer_apply';";
-
-//     $query_run = mysqli_query($con, $query);
-
-//     if ($query_run) {
-
-//         if (mysqli_num_rows($query_run) > 0) {
-
-//             $res = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
-
-//             $data = [
-//                 'status' => 200,
-//                 'message' => 'Volunteer List Fetched Successfully',
-//                 'data' => $res
-//             ];
-//             header("HTTP/1.0 200 OK");
-//             return json_encode($data);
-//         } else {
-//             $data = [
-//                 'status' => 404,
-//                 'message' => 'No Volunteer Found',
-//             ];
-//             header("HTTP/1.0 404 No Volunteer Found");
-//             return json_encode($data);
-//         }
-//     } else {
-//         $data = [
-//             'status' => 500,
-//             'message' => 'Internal Server Error',
-//         ];
-//         header("HTTP/1.0 500 Internal Server Error");
-//         return json_encode($data);
-//     }
-// }
-
-/*--SINGLE READ Volunteer Ends Here--*/
-/*--UPDATE volunteer_acc Starts Here--*/
 function updateVolunteerAcc($volunteerAccInput)
 {
 
@@ -3636,8 +3415,7 @@ function updateVolunteerAcc($volunteerAccInput)
         }
     }
 }
-/*--UPDATE volunteer_acc Ends Here--*/
-/*--DELETE volunteer_acc Starts Here--*/
+
 function deleteVolunteerAcc($userInput)
 {
 
@@ -3680,7 +3458,7 @@ function deleteVolunteerAcc($userInput)
     }
 }
 
-//insert event announcement start
+
 function insertEventAnnouncement($userInput)
 {
     global $con;
@@ -3730,9 +3508,7 @@ function insertEventAnnouncement($userInput)
         }
     }
 }
-//insert event announcement end
 
-//get event announcement start
 function getEventAnnouncementList()
 {
     global $con;
@@ -3761,9 +3537,7 @@ function getEventAnnouncementList()
         }
     }
 }
-//get event announcement end
 
-//read total donations start
 function readTotalDonation()
 {
     global $con;
@@ -3799,9 +3573,7 @@ function readTotalDonation()
         return json_encode($data);
     }
 }
-//read total donations end
 
-//read total events start
 function readTotalEvents()
 {
     global $con;
@@ -3837,9 +3609,7 @@ function readTotalEvents()
         return json_encode($data);
     }
 }
-//read total events end
 
-//read total volunteers start
 function readTotalVolunteers()
 {
     global $con;
@@ -3875,9 +3645,7 @@ function readTotalVolunteers()
         return json_encode($data);
     }
 }
-//read total volunteers end
 
-//read total donors start
 function readTotalDonors()
 {
     global $con;
@@ -3913,9 +3681,7 @@ function readTotalDonors()
         return json_encode($data);
     }
 }
-//read total donors end
 
-//read total cost start
 function readTotalCost()
 {
     global $con;
@@ -3954,10 +3720,6 @@ function readTotalCost()
     }
 }
 
-//read total cost end
-
-/*--VOLUNTEER DASHBOARD METRICS START HERE--*/
-/*--total donations accepted by volunteer starts here--*/
 function readTotalDonationsAcceptedByVolunteer($account_id)
 {
     global $con;
@@ -3999,9 +3761,7 @@ function readTotalDonationsAcceptedByVolunteer($account_id)
         }
     }
 }
-/*--total donations accepted by volunteer ends here--*/
 
-/*--total complated task starts here--*/
 function readTotalCompletedTasks($account_id)
 {
     global $con;
@@ -4043,9 +3803,7 @@ function readTotalCompletedTasks($account_id)
         }
     }
 }
-/*--total completed task ends here--*/
 
-/*--your total donations starts here--*/
 function readYourTotalDonations($account_id)
 {
     global $con;
@@ -4087,9 +3845,7 @@ function readYourTotalDonations($account_id)
         }
     }
 }
-/*--your total donations ends here--*/
 
-/*--read volunteer total hours starts here--*/
 function readTotalHours($account_id)
 {
     global $con;
@@ -4131,10 +3887,7 @@ function readTotalHours($account_id)
         }
     }
 }
-/*--read volunteer total hours ends here--*/
-/*--VOLUNTEER DASHBOARD METRICS START HERE--*/
 
-// READ VOLUNTEER PHASE 2 LOG STARTS HERE
 
 function readVolunteerPhase2Log($account_id)
 {
@@ -4188,9 +3941,7 @@ function readVolunteerPhase2Log($account_id)
         }
     }
 }
-// READ VOLUNTEER PHASE 2 LOG END HERE
 
-// READ PHASE 3 START
 function readVolunteerPhase3Log($account_id)
 {
     global $con;
@@ -4243,4 +3994,244 @@ function readVolunteerPhase3Log($account_id)
         }
     }
 }
-// READ PHASE 3 END
+
+
+function readTotalVolunteerHours()
+{
+    global $con;
+
+    $query = "SELECT SUM(total_hours) as total_hours FROM account_tbl WHERE is_volunteer = 'volunteer' AND acc_status_id = 1";
+    $result = mysqli_query($con, $query);
+
+    if ($result) {
+        if (mysqli_num_rows($result) > 0) {
+            $res = mysqli_fetch_assoc($result);
+            $data = [
+                'status' => 200,
+                'message' => 'Total Volunteer Hours Fetched Successfully',
+                'data' => $res
+            ];
+            header('HTTP/1.0 200 OK');
+            return json_encode($data);
+        } else {
+            $data = [
+                'status' => 404,
+                'message' => 'No Volunteer Hours Found',
+            ];
+            header('HTTP/1.0 404 Not Found');
+            return json_encode($data);
+        }
+    } else {
+        $data = [
+            'status' => 500,
+            'message' => 'Internal Server Error',
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($data);
+    }
+}
+
+
+
+function insertNewAdmin($userInput)
+{
+    global $con;
+
+
+    $admin_id = 'ADMIN - ' . date('Y-d') . substr(uniqid(), -5);
+    $last_name = mysqli_real_escape_string($con, $userInput['last_name']);
+    $first_name = mysqli_real_escape_string($con, $userInput['first_name']);
+    $middle_name = mysqli_real_escape_string($con, $userInput['middle_name']);
+    $email = mysqli_real_escape_string($con, $userInput['email']);
+    $password = mysqli_real_escape_string($con, $userInput['password']);
+    $contact_info = mysqli_real_escape_string($con, $userInput['contact_info']);
+
+    $hashingo = md5($password);
+
+    if (empty(trim($last_name))) {
+        return error422('Enter last name');
+    } elseif (empty(trim($first_name))) {
+        return error422('Enter first name');
+    } elseif (empty(trim($middle_name))) {
+        return error422('Enter middle name');
+    } elseif (empty(trim($email))) {
+        return error422('Enter email');
+    } elseif (empty(trim($password))) {
+        return error422('Enter password');
+    } elseif (empty(trim($contact_info))) {
+        return error422('Enter contact info');
+    } else {
+
+        $query = "INSERT INTO 
+        admin_acc_tbl (
+            admin_id, 
+            last_name, 
+            first_name, 
+            middle_name, 
+            email, 
+            password, 
+            contact_info) 
+        VALUES (
+            '$admin_id', 
+            '$last_name', 
+            '$first_name', 
+            '$middle_name', 
+            '$email', 
+            '$hashingo', 
+            '$contact_info')";
+
+        $result = mysqli_query($con, $query);
+
+        if ($result) {
+            $data = [
+                'status' => 201,
+                'message' => 'Admin Inserted Successfully',
+            ];
+            header("HTTP/1.0 201 OK");
+            return json_encode($data);
+        } else {
+            $data = [
+                "status" => 500,
+                "message" => "Internal Server Error",
+            ];
+            header("HTTP/1.0 500 Internal Server Error");
+            return json_encode($data);
+        }
+    }
+}
+
+
+
+function getAdminList()
+{
+    global $con;
+
+    $query = "SELECT * FROM admin_acc_tbl";
+    $result = mysqli_query($con, $query);
+
+    if ($result) {
+        if (mysqli_num_rows($result) > 0) {
+            $res = mysqli_fetch_all($result, MYSQLI_ASSOC);
+
+            $data = [
+                "status" => 201,
+                "message" => "Admin List Fetched Successfully",
+                "data" => $res
+            ];
+            header("HTTP/1.0 200 OK");
+            return json_encode($data);
+        } else {
+            $data = [
+                "status" => 404,
+                "message" => "No Admin Found",
+            ];
+            header("HTTP/1.0 404 Not Found");
+            return json_encode($data);
+        }
+    } else {
+        $data = [
+            "status" => 500,
+            "message" => "Internal Server Error",
+        ];
+        header("HTTP/1.0 500 Internal Server Error");
+        return json_encode($data);
+    }
+}
+
+
+function getSingleAdmin($userInput)
+{
+    global $con;
+
+    $admin_id = mysqli_real_escape_string($con, $userInput['admin_id']);
+
+    if (empty(trim($admin_id))) {
+        return error422('Enter admin id');
+    } else {
+        $query = "SELECT * FROM admin_acc_tbl WHERE admin_id = '$admin_id' LIMIT 1";
+        $result = mysqli_query($con, $query);
+
+        if ($result) {
+            if (mysqli_num_rows($result) == 1) {
+                $res = mysqli_fetch_assoc($result);
+
+                $data = [
+                    'status' => 200,
+                    'message' => 'Admin Fetched Successfully',
+                    'data' => $res
+                ];
+                header('HTTP/1.0 200 OK');
+                return json_encode($data);
+            } else {
+                $data = [
+                    'status' => 404,
+                    'message' => 'No Admin Found',
+                ];
+            }
+        } else {
+            $data = [
+                'status' => 500,
+                'message' => 'Internal Server Error',
+            ];
+            header('HTTP/1.0 500 Internal Server Error');
+            return json_encode($data);
+        }
+    }
+}
+
+function updateAdmin($userInput)
+{
+    global $con;
+
+
+    $admin_id = mysqli_real_escape_string($con, $userInput['admin_id']);
+    $last_name = mysqli_real_escape_string($con, $userInput['last_name']);
+    $first_name = mysqli_real_escape_string($con, $userInput['first_name']);
+    $middle_name = mysqli_real_escape_string($con, $userInput['middle_name']);
+    $email = mysqli_real_escape_string($con, $userInput['email']);
+    $password = mysqli_real_escape_string($con, $userInput['password']);
+    $contact_info = mysqli_real_escape_string($con, $userInput['contact_info']);
+
+    if (empty(trim($admin_id))) {
+        return error422('Enter admin id');
+    } elseif (empty(trim($last_name))) {
+        return error422('Enter last name');
+    } elseif (empty(trim($first_name))) {
+        return error422('Enter first name');
+    } elseif (empty(trim($middle_name))) {
+        return error422('Enter middle name');
+    } elseif (empty(trim($email))) {
+        return error422('Enter email');
+    } elseif (empty(trim($password))) {
+        return error422('Enter password');
+    } elseif (empty(trim($contact_info))) {
+        return error422('Enter contact info');
+    } else {
+        $query = "UPDATE admin_acc_tbl SET
+            last_name='$last_name', 
+            first_name='$first_name',  
+            middle_name='$middle_name', 
+            email='$email', 
+            password='$password', 
+            contact_info='$contact_info' 
+        WHERE admin_acc_tbl.admin_id = '$admin_id'";
+
+        $result = mysqli_query($con, $query);
+
+        if ($result) {
+            $data = [
+                'status' => 200,
+                'message' => 'Admin Updated Successfully',
+            ];
+            header('HTTP/1.0 200 OK');
+            return json_encode($data);
+        } else {
+            $data = [
+                'status' => 500,
+                'message' => 'Internal Server Error',
+            ];
+            header('HTTP/1.0 500 Internal Server Error');
+            return json_encode($data);
+        }
+    }
+}

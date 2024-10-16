@@ -1,14 +1,18 @@
 <?php
 
-header('Access-Control-Allow-Origin:*');
+header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Methods: GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Request-With');
 
 include('../../function.php');
 require '../../../inc/dbcon.php';
+require '../../../vendor/autoload.php'; // Include Composer's autoloader
 
-global $con;
+use Firebase\JWT\JWT;
+use Firebase\JWT\ExpiredException;
+use Firebase\JWT\Key;
+
 
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
@@ -18,8 +22,9 @@ if ($requestMethod == "OPTIONS") {
     exit();
 }
 
-if ($requestMethod == 'POST') {
-    // $session_token = $_COOKIE['donor_session_token'] ?? $_COOKIE['volun_session_token'] ?? '';
+if ($requestMethod == 'GET') {
+
+    // $session_token = $_COOKIE['session_token'] ?? '';
 
     // $query = "SELECT account_id, session_expire FROM account_tbl WHERE session_token = '$session_token'";
     // $result = mysqli_query($con, $query);
@@ -29,9 +34,8 @@ if ($requestMethod == 'POST') {
     //     $account_id = $res['account_id'];
     //     $session_expire = $res['session_expire'];
 
-
     //     if (time() > $session_expire) { //prompt user to login again if session has expired
-    //         $invalidate_query = "UPDATE account_tbl SET session_token = NULL, session_expire = NULL WHERE account_id = $account_id";
+    //         $invalidate_query = "UPDATE account_tbl SET session_token = NULL, session_expire = NULL WHERE account_id = '$account_id'";
     //         mysqli_query($con, $invalidate_query);
 
     //         $data = [
@@ -41,19 +45,13 @@ if ($requestMethod == 'POST') {
     //         header("HTTP/1.0 401 Unauthorized");
     //         echo json_encode($data);
     //         exit();
-    //     } else { //proceed with login since session is still valid
+    //     } else { //proceed with function call since session is still valid
+    $readTotalHours = readTotalVolunteerHours();
 
-    $inputData = json_decode(file_get_contents("php://input"), true);
-
-    if (empty($inputData)) {
-        $insertDonation = insertDonation($_POST);
-    } else {
-        $insertDonation = insertDonation($inputData);
-    }
-    echo $insertDonation;
+    echo $readTotalHours;
     exit();
-    //     }
-    // } else {
+    // }
+    // } else { //prompt the user to login if session token is not found/null
     //     $data = [
     //         'status' => 401,
     //         'message' => 'Unauthorized',

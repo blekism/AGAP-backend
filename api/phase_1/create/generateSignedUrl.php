@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     $mimeType = mime_content_type($file['tmp_name']);
 
-    $storage = new StorageClient(['keyFilePath' =>  '../../agap-system-e1fa5e729bad.json']);
+    $storage = new StorageClient(['keyFilePath' =>  '../../agap-system-c677a8c0908d.json']);
     $bucket = $storage->bucket($bucketName);
     $object = $bucket->upload(
         fopen($file['tmp_name'], 'r'),
