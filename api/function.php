@@ -1330,53 +1330,44 @@ function readDonationDonor($account_id)
 {
     global $con;
 
-    if (!isset($userParams['donor_id'])) {
-        return error422('Donor ID not found in URL');
-    } elseif ($userParams['donor_id'] == null) {
-        return error422('Donor ID is null');
-    } else {
-        $donor_id = mysqli_real_escape_string($con, $userParams['donor_id']);
-
-        $query = "SELECT 
+    $query = "SELECT 
                     donation_tbl.donation_id,
                     donation_status_tbl.status_name,
                     recipient_category_tbl.recipient_type,
-                    event_tbl.event_name,   
-                    donation_tbl.received_by
+                    donation_tbl.received_by,
+                    donation_tbl.received_date
                 FROM
                     donation_tbl
                     INNER JOIN donation_status_tbl ON donation_tbl.status_id = donation_status_tbl.status_id
                     INNER JOIN recipient_category_tbl ON donation_tbl.recipient_id = recipient_category_tbl.recipient_category_id
-                    INNER JOIN event_tbl ON donation_tbl.event_id = event_tbl.evenet_id
-                    WHERE donation_tbl.donor_id = '$donor_id';";
-        $result = mysqli_query($con, $query);
+                    WHERE donation_tbl.account_id = '$account_id';";
+    $result = mysqli_query($con, $query);
 
-        if ($result) {
-            if (mysqli_num_rows($result) > 0) {
-                $res = mysqli_fetch_all($result, MYSQLI_ASSOC);
-                $data = [
-                    'status' => 200,
-                    'message' => 'Donation Fetched Successfully ',
-                    'data' => $res,
-                ];
-                header("HTTP/1.0 200 OK");
-                return json_encode($data);
-            } else {
-                $data = [
-                    'status' => 404,
-                    'message' => 'No Donation Found',
-                ];
-                header("HTTP/1.0 404 Not Found");
-                return json_encode($data);
-            }
+    if ($result) {
+        if (mysqli_num_rows($result) > 0) {
+            $res = mysqli_fetch_all($result, MYSQLI_ASSOC);
+            $data = [
+                'status' => 200,
+                'message' => 'Donation Fetched Successfully ',
+                'data' => $res,
+            ];
+            header("HTTP/1.0 200 OK");
+            return json_encode($data);
         } else {
             $data = [
-                'status' => 500,
-                'message' => 'Internal Server Error',
+                'status' => 404,
+                'message' => 'No Donation Found',
             ];
-            header("HTTP/1.0 500 Internal Server Error");
+            header("HTTP/1.0 404 Not Found");
             return json_encode($data);
         }
+    } else {
+        $data = [
+            'status' => 500,
+            'message' => 'Internal Server Error',
+        ];
+        header("HTTP/1.0 500 Internal Server Error");
+        return json_encode($data);
     }
 }
 
