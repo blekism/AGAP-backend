@@ -77,6 +77,17 @@ function deductFromStock($userInput)
 
     $event_id = mysqli_real_escape_string($con, $userInput['evenet_id']);
 
+    $queryGetContrib = "SELECT contrib_amount FROM event_tbl WHERE evenet_id = '$event_id'";
+    $resultGetContrib = mysqli_query($con, $queryGetContrib);
+    $currentContrib = 0;
+
+    if ($resultGetContrib) {
+        $row = mysqli_fetch_assoc($resultGetContrib);
+        $currentContrib = $row['contrib_amount'];
+    } else {
+        return error422('Error fetching current contribution amount');
+    }
+
     if (!isset($userInput['items'])) {
         return error422('required items not found');
     } elseif ($userInput['items'] == null) {
@@ -148,14 +159,12 @@ function deductFromStock($userInput)
                                     // Calculate the contribution amount
                                     $contribution_amount = $cost * $percentage_used;
 
-                                    $query4 = "UPDATE event_tbl SET contrib_amount = '$contribution_amount' WHERE evenet_id = '$event_id'";
-                                    $result4 = mysqli_query($con, $query4);
+                                    $currentContrib += $contribution_amount;
 
-                                    if ($result4) {
-                                        $item_to_deduct = 0;
-                                    } else {
-                                        return error422('Error updating stock');
-                                    }
+
+
+                                    $item_to_deduct = 0;
+
 
                                     //query here para sa pagupdate ng contribution event including yung event id
                                 } else {
@@ -166,26 +175,28 @@ function deductFromStock($userInput)
                                 $percentage_used = $in_stock / $item_to_deduct;
                                 $contribution_amount = $cost * $percentage_used;
 
-                                $query5 = "UPDATE event_tbl SET contrib_amount = '$contribution_amount' WHERE evenet_id = '$event_id'";
-                                $result5 = mysqli_query($con, $query5);
+                                $currentContrib += $contribution_amount;
 
-                                if ($result5) {
-                                    $item_to_deduct = $item_to_deduct - $in_stock;
+                                $item_to_deduct = $item_to_deduct - $in_stock;
 
-                                    $query3 = "UPDATE donation_items_tbl SET in_stock = 0 WHERE donation_items_id = '$donation_items_id'";
-                                    $result3 = mysqli_query($con, $query3);
+                                $query3 = "UPDATE donation_items_tbl SET in_stock = 0 WHERE donation_items_id = '$donation_items_id'";
+                                $result3 = mysqli_query($con, $query3);
 
-                                    if (!$result3) {
-                                        return error422('Error updating stock');
-                                    }
-                                } else {
+                                if (!$result3) {
                                     return error422('Error updating stock');
                                 }
+
 
                                 //query here para sa pagupdate ng contribution event including yung event id
 
                             }
                         }
+                    }
+                    $query4 = "UPDATE event_tbl SET contrib_amount = '$currentContrib' WHERE evenet_id = '$event_id'";
+                    $result4 = mysqli_query($con, $query4);
+
+                    if (!$result4) {
+                        return error422('Error updating contribution amount');
                     }
                 }
             }
